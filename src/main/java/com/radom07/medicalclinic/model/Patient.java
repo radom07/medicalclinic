@@ -11,6 +11,7 @@ import java.time.LocalDate;
 public class Patient {
 
     private String email;
+    @Setter
     private String password;
     private String idCardNo;
     private String firstName;

@@ -19,7 +19,7 @@ public class PatientService {
         return patientRepository.findAll();
     }
 
-    public Patient getPatientByEmail(String email) {
+    public Patient getByEmail(String email) {
         return patientRepository.findByEmail(email)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist: " + email));
     }
@@ -30,16 +30,23 @@ public class PatientService {
         }
         return patientRepository.save(patient);
     }
-    public void deletePatientByEmail(String email) {
-        boolean removed = patientRepository.deleteByEmail(email);
-        if (!removed) {
+
+    public void deleteByEmail(String email) {
+        if (!patientRepository.deleteByEmail(email)) {
             throw new PatientNotFoundException("The patient with the provided email address does not exist: " + email);
         }
     }
 
     public Patient updatePatient(String email, Patient updatedData) {
-        Patient existingPatient = getPatientByEmail(email);
+        Patient existingPatient = patientRepository.findByEmail(email)
+                .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist: " + email));
         existingPatient.update(updatedData);
         return existingPatient;
+    }
+
+    public void updatePassword(String email, String password) {
+        Patient patient = patientRepository.findByEmail(email)
+                .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist: " + email));
+        patient.setPassword(password);
     }
 }

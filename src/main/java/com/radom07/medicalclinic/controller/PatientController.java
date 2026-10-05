@@ -4,15 +4,7 @@ import com.radom07.medicalclinic.model.Patient;
 import com.radom07.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -30,7 +22,7 @@ public class PatientController {
 
     @GetMapping("/{email}")
     public Patient getPatientByEmail(@PathVariable String email) {
-        return patientService.getPatientByEmail(email);
+        return patientService.getByEmail(email);
     }
 
     @PostMapping
@@ -42,11 +34,17 @@ public class PatientController {
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deletePatient(@PathVariable String email) {
-        patientService.deletePatientByEmail(email);
+        patientService.deleteByEmail(email);
     }
 
     @PutMapping("/{email}")
     public Patient updatePatient(@PathVariable String email, @RequestBody Patient patient) {
         return patientService.updatePatient(email, patient);
+    }
+
+    @PatchMapping("/{email}/password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updatePassword(@PathVariable String email, @RequestBody Patient patient) {
+        patientService.updatePassword(email, patient.getPassword());
     }
 }
