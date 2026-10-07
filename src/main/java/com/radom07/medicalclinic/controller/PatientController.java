@@ -1,6 +1,9 @@
 package com.radom07.medicalclinic.controller;
 
-import com.radom07.medicalclinic.model.Patient;
+import com.radom07.medicalclinic.command.ChangePasswordCommand;
+import com.radom07.medicalclinic.command.CreatePatientCommand;
+import com.radom07.medicalclinic.command.UpdatePatientCommand;
+import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.service.PatientService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -16,19 +19,19 @@ public class PatientController {
     private final PatientService patientService;
 
     @GetMapping
-    List<Patient> getPatients() {
+    public List<PatientDto> getPatients() {
         return patientService.getPatients();
     }
 
     @GetMapping("/{email}")
-    public Patient getPatientByEmail(@PathVariable String email) {
+    public PatientDto getPatientByEmail(@PathVariable String email) {
         return patientService.getByEmail(email);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public Patient addPatient(@RequestBody Patient patient) {
-        return patientService.addPatient(patient);
+    public PatientDto addPatient(@RequestBody CreatePatientCommand command) {
+        return patientService.addPatient(command);
     }
 
     @DeleteMapping("/{email}")
@@ -38,13 +41,12 @@ public class PatientController {
     }
 
     @PutMapping("/{email}")
-    public Patient updatePatient(@PathVariable String email, @RequestBody Patient patient) {
-        return patientService.updatePatient(email, patient);
+    public PatientDto updatePatient(@PathVariable String email, @RequestBody UpdatePatientCommand command) {
+        return patientService.updatePatient(email, command);
     }
 
     @PatchMapping("/{email}/password")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void updatePassword(@PathVariable String email, @RequestBody Patient patient) {
-        patientService.updatePassword(email, patient.getPassword());
+    public PatientDto updatePassword(@PathVariable String email, @RequestBody ChangePasswordCommand command) {
+        return patientService.updatePassword(email, command.password());
     }
 }

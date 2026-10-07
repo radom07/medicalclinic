@@ -1,6 +1,6 @@
 package com.radom07.medicalclinic.repository;
 
-import com.radom07.medicalclinic.model.Patient;
+import com.radom07.medicalclinic.model.entity.Patient;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
