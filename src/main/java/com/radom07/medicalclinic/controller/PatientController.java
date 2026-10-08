@@ -5,8 +5,11 @@ import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.service.PatientService;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/patients")
 @RequiredArgsConstructor
+@Validated // Przy walidacji PathVariable niepoprawna wartosc rzuci 500, a powinna 400 BAD REQUEST -> potrzebny ExceptionHandler
 public class PatientController {
 
     private final PatientService patientService;
@@ -24,29 +28,29 @@ public class PatientController {
     }
 
     @GetMapping("/{email}")
-    public PatientDto getPatientByEmail(@PathVariable String email) {
+    public PatientDto getPatientByEmail(@PathVariable @Email String email) {
         return patientService.getByEmail(email);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public PatientDto addPatient(@RequestBody CreatePatientCommand command) {
+    public PatientDto addPatient(@Valid @RequestBody CreatePatientCommand command) {
         return patientService.addPatient(command);
     }
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePatient(@PathVariable String email) {
+    public void deletePatient(@PathVariable @Email String email) {
         patientService.deleteByEmail(email);
     }
 
     @PutMapping("/{email}")
-    public PatientDto updatePatient(@PathVariable String email, @RequestBody UpdatePatientCommand command) {
+    public PatientDto updatePatient(@PathVariable @Email String email, @Valid @RequestBody UpdatePatientCommand command) {
         return patientService.updatePatient(email, command);
     }
 
     @PatchMapping("/{email}/password")
-    public PatientDto updatePassword(@PathVariable String email, @RequestBody ChangePasswordCommand command) {
+    public PatientDto updatePassword(@PathVariable @Email String email, @Valid @RequestBody ChangePasswordCommand command) {
         return patientService.updatePassword(email, command.password());
     }
 }
