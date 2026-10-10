@@ -21,15 +21,14 @@ public class PatientService {
     private final PatientMapper mapper;
 
     public List<PatientDto> getPatients() {
-        return patientRepository.findAll()
-                .stream()
-                .map(mapper::entityToDto)
+        return patientRepository.findAll().stream()
+                .map(mapper::toDto)
                 .toList();
     }
 
     public PatientDto getByEmail(String email) {
         return patientRepository.findByEmail(email)
-                .map(mapper::entityToDto)
+                .map(mapper::toDto)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
     }
 
@@ -37,7 +36,7 @@ public class PatientService {
         if (patientRepository.findByEmail(command.email()).isPresent()) {
             throw new PatientAlreadyExistsException("The patient with the provided email address already exists");
         }
-        return mapper.entityToDto(patientRepository.save(mapper.commandToEntity(command)));
+        return mapper.toDto(patientRepository.save(mapper.toEntity(command)));
     }
 
     public void deleteByEmail(String email) {
@@ -50,13 +49,13 @@ public class PatientService {
         Patient existingPatient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         existingPatient.update(command);
-        return mapper.entityToDto(existingPatient);
+        return mapper.toDto(existingPatient);
     }
 
     public PatientDto updatePassword(String email, String password) {
         Patient patient = patientRepository.findByEmail(email)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         patient.setPassword(password);
-        return mapper.entityToDto(patient);
+        return mapper.toDto(patient);
     }
 }

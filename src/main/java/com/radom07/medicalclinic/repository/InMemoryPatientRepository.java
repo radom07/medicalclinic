@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Objects.nonNull;
+
 @Repository
 public class InMemoryPatientRepository {
 
@@ -18,7 +20,7 @@ public class InMemoryPatientRepository {
 
     public Optional<Patient> findByEmail(String email) {
         return patients.stream()
-                .filter(patient -> patient.getEmail().equalsIgnoreCase(email))
+                .filter(patient -> nonNull(patient.getEmail()) && patient.getEmail().equalsIgnoreCase(email))
                 .findFirst();
     }
 
@@ -28,6 +30,6 @@ public class InMemoryPatientRepository {
     }
 
     public boolean deleteByEmail(String email) {
-        return patients.removeIf(patient -> patient.getEmail().equalsIgnoreCase(email));
+        return patients.removeIf(patient -> nonNull(patient.getEmail()) && patient.getEmail().equalsIgnoreCase(email));
     }
 }
