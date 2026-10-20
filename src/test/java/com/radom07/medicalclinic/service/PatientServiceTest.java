@@ -18,9 +18,12 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 class PatientServiceTest {
@@ -53,11 +56,23 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals(3, patientsDto.size()),
-                () -> assertEquals("Jan", patientsDto.get(0).firstName()),
                 () -> assertEquals("jan@test.pl", patientsDto.get(0).email()),
+                () -> assertEquals("Jan", patientsDto.get(0).firstName()),
+                () -> assertEquals("Kowalski", patientsDto.get(0).lastName()),
+                () -> assertEquals("111", patientsDto.get(0).phoneNumber()),
+                () -> assertEquals(LocalDate.of(2015, 10, 25), patientsDto.get(0).birthday()),
+                () -> assertEquals("anna@test.pl", patientsDto.get(1).email()),
                 () -> assertEquals("Anna", patientsDto.get(1).firstName()),
-                () -> assertEquals("Piotr", patientsDto.get(2).firstName())
+                () -> assertEquals("Nowak", patientsDto.get(1).lastName()),
+                () -> assertEquals("222", patientsDto.get(1).phoneNumber()),
+                () -> assertEquals(LocalDate.of(2018, 5, 12), patientsDto.get(1).birthday()),
+                () -> assertEquals("piotr@test.pl", patientsDto.get(2).email()),
+                () -> assertEquals("Piotr", patientsDto.get(2).firstName()),
+                () -> assertEquals("Wiśniewski", patientsDto.get(2).lastName()),
+                () -> assertEquals("333", patientsDto.get(2).phoneNumber()),
+                () -> assertEquals(LocalDate.of(2020, 1, 15), patientsDto.get(2).birthday())
         );
+        verify(patientRepository).findAll();
     }
 
     @Test
@@ -73,8 +88,11 @@ class PatientServiceTest {
         assertAll(
                 () -> assertEquals("test@test.pl", patientDto.email()),
                 () -> assertEquals("Jan", patientDto.firstName()),
+                () -> assertEquals("Kowalski", patientDto.lastName()),
+                () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
+        verify(patientRepository).findByEmail(email);
     }
 
     @Test
@@ -91,6 +109,8 @@ class PatientServiceTest {
                 () -> assertEquals("The patient with the provided email address does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
+        verify(patientRepository).findByEmail(email);
+        verifyNoMoreInteractions(patientRepository);
     }
 
     @Test
@@ -106,8 +126,13 @@ class PatientServiceTest {
         assertAll(
                 () -> assertEquals("test@test.pl", patientDto.email()),
                 () -> assertEquals("Jan", patientDto.firstName()),
+                () -> assertEquals("Kowalski", patientDto.lastName()),
+                () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
+        verify(patientRepository).findByEmail(command.email());
+        verify(patientRepository).save(any(Patient.class));
+        verifyNoMoreInteractions(patientRepository);
     }
 
     @Test
@@ -171,8 +196,11 @@ class PatientServiceTest {
         assertAll(
                 () -> assertEquals("test@test.pl", patientDto.email()),
                 () -> assertEquals("Piotr", patientDto.firstName()),
+                () -> assertEquals("Nowak", patientDto.lastName()),
+                () -> assertEquals("987654321", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2025, 1, 10), patientDto.birthday())
         );
+        verify(patientRepository).findByEmail(email);
     }
 
     @Test
@@ -202,9 +230,18 @@ class PatientServiceTest {
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
         when(patientRepository.findByEmail(email)).thenReturn(patient);
         // when
-        PatientDto patientDto = patientService.updatePassword(email, newPassword);
+        patientService.updatePassword(email, newPassword);
         // then
-        assertEquals("4321", patient.get().getPassword());
+        assertAll(
+                () -> assertEquals("4321", patient.get().getPassword()),
+                () -> assertEquals("test@test.pl", patient.get().getEmail()),
+                () -> assertEquals("Jan", patient.get().getFirstName()),
+                () -> assertEquals("Kowalski", patient.get().getLastName()),
+                () -> assertEquals("123456789", patient.get().getPhoneNumber()),
+                () -> assertEquals(LocalDate.of(2015, 10, 25), patient.get().getBirthday())
+        );
+        verify(patientRepository).findByEmail(email);
+        verifyNoMoreInteractions(patientRepository);
     }
 
     @Test
