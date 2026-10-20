@@ -17,7 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/patients")
 @RequiredArgsConstructor
-@Validated // Przy walidacji PathVariable niepoprawna wartosc rzuci 500, a powinna 400 BAD REQUEST -> potrzebny ExceptionHandler
+@Validated
 public class PatientController {
 
     private final PatientService patientService;
