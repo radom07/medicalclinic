@@ -7,7 +7,7 @@ import com.radom07.medicalclinic.exception.PatientNotFoundException;
 import com.radom07.medicalclinic.mapper.PatientMapper;
 import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.model.entity.Patient;
-import com.radom07.medicalclinic.repository.InMemoryPatientRepository;
+import com.radom07.medicalclinic.repository.PatientRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -28,13 +28,13 @@ import static org.mockito.Mockito.when;
 
 class PatientServiceTest {
 
-    private InMemoryPatientRepository patientRepository;
+    private PatientRepository patientRepository;
     private PatientMapper patientMapper;
     private PatientService patientService;
 
     @BeforeEach
     void setUp() {
-        this.patientRepository = Mockito.mock(InMemoryPatientRepository.class);
+        this.patientRepository = Mockito.mock(PatientRepository.class);
         this.patientMapper = Mappers.getMapper(PatientMapper.class);
         this.patientService = new PatientService(patientRepository, patientMapper);
     }
@@ -43,11 +43,11 @@ class PatientServiceTest {
     void getPatients_DataCorrect_ReturnPatientsDto() {
         // given
         List<Patient> patients = List.of(
-                new Patient("jan@test.pl", "1234", "0001", "Jan", "Kowalski",
+                new Patient(1L, "jan@test.pl", "1234", "0001", "Jan", "Kowalski",
                         "111", LocalDate.of(2015, 10, 25)),
-                new Patient("anna@test.pl", "1234", "0002", "Anna", "Nowak",
+                new Patient(2L, "anna@test.pl", "1234", "0002", "Anna", "Nowak",
                         "222", LocalDate.of(2018, 5, 12)),
-                new Patient("piotr@test.pl", "1234", "0003", "Piotr", "Wiśniewski",
+                new Patient(3L, "piotr@test.pl", "1234", "0003", "Piotr", "Wiśniewski",
                         "333", LocalDate.of(2020, 1, 15))
         );
         when(patientRepository.findAll()).thenReturn(patients);
@@ -79,7 +79,7 @@ class PatientServiceTest {
     void getByEmail_DataCorrect_ReturnPatientDto() {
         // given
         String email = "test@test.pl";
-        Optional<Patient> patient = Optional.of(new Patient("test@test.pl", "1234", "0001", "Jan",
+        Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
         when(patientRepository.findByEmail(email)).thenReturn(patient);
         // when
@@ -140,7 +140,7 @@ class PatientServiceTest {
         // given
         CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
-        Optional<Patient> patient = Optional.of(new Patient("test@test.pl", "1234", "0001", "Jan",
+        Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
         when(patientRepository.findByEmail("test@test.pl")).thenReturn(patient);
         // when
@@ -158,7 +158,7 @@ class PatientServiceTest {
     void deleteByEmail_DataCorrect_DeletesPatient() {
         // given
         String email = "test@test.pl";
-        when(patientRepository.deleteByEmail(email)).thenReturn(true);
+        when(patientRepository.existsByEmail(email)).thenReturn(true);
         // when
         patientService.deleteByEmail(email);
         // then
@@ -169,7 +169,7 @@ class PatientServiceTest {
     void deleteByEmail_PatientNotFound_ThrowsPatientNotFoundException() {
         // given
         String email = "mail@mail.pl";
-        when(patientRepository.deleteByEmail(email)).thenReturn(false);
+        when(patientRepository.existsByEmail(email)).thenReturn(false);
         // when
         PatientNotFoundException notFoundException = assertThrows(
                 PatientNotFoundException.class, () -> patientService.deleteByEmail(email)
@@ -187,7 +187,7 @@ class PatientServiceTest {
         String email = "test@test.pl";
         UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "0001", "Piotr",
                 "Nowak", "987654321", LocalDate.of(2025, 1, 10));
-        Optional<Patient> patient = Optional.of(new Patient("test@test.pl", "1234", "0001", "Jan",
+        Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
         when(patientRepository.findByEmail(email)).thenReturn(patient);
         // when
@@ -226,7 +226,7 @@ class PatientServiceTest {
         // given
         String email = "test@test.pl";
         String newPassword = "4321";
-        Optional<Patient> patient = Optional.of(new Patient("test@test.pl", "1234", "0001", "Jan",
+        Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
         when(patientRepository.findByEmail(email)).thenReturn(patient);
         // when
@@ -241,7 +241,7 @@ class PatientServiceTest {
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patient.get().getBirthday())
         );
         verify(patientRepository).findByEmail(email);
-        verifyNoMoreInteractions(patientRepository);
+        verify(patientRepository).save(patient.get());
     }
 
     @Test
@@ -260,5 +260,4 @@ class PatientServiceTest {
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
     }
-
 }
