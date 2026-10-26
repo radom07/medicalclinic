@@ -22,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -81,7 +82,7 @@ class PatientServiceTest {
         String email = "test@test.pl";
         Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
-        when(patientRepository.findByEmail(email)).thenReturn(patient);
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(patient);
         // when
         PatientDto patientDto = patientService.getByEmail(email);
         // then
@@ -92,14 +93,14 @@ class PatientServiceTest {
                 () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
-        verify(patientRepository).findByEmail(email);
+        verify(patientRepository).findByEmailIgnoreCase(email);
     }
 
     @Test
     void getByEmail_PatientNotFound_ThrowsPatientNotFoundException() {
         // given
         String email = "mail@mail.pl";
-        when(patientRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
         // when
         PatientNotFoundException notFoundException = assertThrows(
                 PatientNotFoundException.class, () -> patientService.getByEmail(email)
@@ -109,7 +110,7 @@ class PatientServiceTest {
                 () -> assertEquals("The patient with the provided email address does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
-        verify(patientRepository).findByEmail(email);
+        verify(patientRepository).findByEmailIgnoreCase(email);
         verifyNoMoreInteractions(patientRepository);
     }
 
@@ -118,7 +119,7 @@ class PatientServiceTest {
         // given
         CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
-        when(patientRepository.findByEmail(command.email())).thenReturn(Optional.empty());
+        when(patientRepository.findByEmailIgnoreCase(command.email())).thenReturn(Optional.empty());
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
         // when
         PatientDto patientDto = patientService.addPatient(command);
@@ -130,9 +131,8 @@ class PatientServiceTest {
                 () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
-        verify(patientRepository).findByEmail(command.email());
+        verify(patientRepository).existsByEmailIgnoreCase(command.email());
         verify(patientRepository).save(any(Patient.class));
-        verifyNoMoreInteractions(patientRepository);
     }
 
     @Test
@@ -142,7 +142,7 @@ class PatientServiceTest {
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
         Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
-        when(patientRepository.findByEmail("test@test.pl")).thenReturn(patient);
+        when(patientRepository.existsByEmailIgnoreCase("test@test.pl")).thenReturn(true);
         // when
         PatientAlreadyExistsException alreadyExistsException = assertThrows(
                 PatientAlreadyExistsException.class, () -> patientService.addPatient(command)
@@ -158,7 +158,7 @@ class PatientServiceTest {
     void deleteByEmail_DataCorrect_DeletesPatient() {
         // given
         String email = "test@test.pl";
-        when(patientRepository.existsByEmail(email)).thenReturn(true);
+        when(patientRepository.existsByEmailIgnoreCase(email)).thenReturn(true);
         // when
         patientService.deleteByEmail(email);
         // then
@@ -169,7 +169,7 @@ class PatientServiceTest {
     void deleteByEmail_PatientNotFound_ThrowsPatientNotFoundException() {
         // given
         String email = "mail@mail.pl";
-        when(patientRepository.existsByEmail(email)).thenReturn(false);
+        when(patientRepository.existsByEmailIgnoreCase(email)).thenReturn(false);
         // when
         PatientNotFoundException notFoundException = assertThrows(
                 PatientNotFoundException.class, () -> patientService.deleteByEmail(email)
@@ -185,11 +185,12 @@ class PatientServiceTest {
     void updatePatient_DataCorrect_ReturnUpdatedPatientDto() {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "0001", "Piotr",
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "Piotr",
                 "Nowak", "987654321", LocalDate.of(2025, 1, 10));
         Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
-        when(patientRepository.findByEmail(email)).thenReturn(patient);
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(patient);
+        when(patientRepository.existsByEmailIgnoreCase(email)).thenReturn(false);
         // when
         PatientDto patientDto = patientService.updatePatient(email, command);
         // then
@@ -200,16 +201,16 @@ class PatientServiceTest {
                 () -> assertEquals("987654321", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2025, 1, 10), patientDto.birthday())
         );
-        verify(patientRepository).findByEmail(email);
+        verify(patientRepository).findByEmailIgnoreCase(email);
     }
 
     @Test
     void updatePatient_PatientNotFound_ThrowsPatientNotFoundException() {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "0001", "Piotr",
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "Piotr",
                 "Nowak", "987654321", LocalDate.of(2025, 1, 10));
-        when(patientRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
         // when
         PatientNotFoundException notFoundException = assertThrows(
                 PatientNotFoundException.class, () -> patientService.updatePatient(email, command)
@@ -228,7 +229,7 @@ class PatientServiceTest {
         String newPassword = "4321";
         Optional<Patient> patient = Optional.of(new Patient(1L, "test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "123456789", LocalDate.of(2015, 10, 25)));
-        when(patientRepository.findByEmail(email)).thenReturn(patient);
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(patient);
         // when
         patientService.updatePassword(email, newPassword);
         // then
@@ -240,7 +241,7 @@ class PatientServiceTest {
                 () -> assertEquals("123456789", patient.get().getPhoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patient.get().getBirthday())
         );
-        verify(patientRepository).findByEmail(email);
+        verify(patientRepository).findByEmailIgnoreCase(email);
         verify(patientRepository).save(patient.get());
     }
 
@@ -249,7 +250,7 @@ class PatientServiceTest {
         // given
         String email = "mail@mail.pl";
         String password = "1234";
-        when(patientRepository.findByEmail(email)).thenReturn(Optional.empty());
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
         // when
         PatientNotFoundException notFoundException = assertThrows(
                 PatientNotFoundException.class, () -> patientService.updatePassword(email, password)
@@ -259,5 +260,52 @@ class PatientServiceTest {
                 () -> assertEquals("The patient with the provided email address does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
+    }
+
+    @Test
+    void updatePatient_EmailTakenByAnotherPatient_ThrowsPatientAlreadyExistsException() {
+        // given
+        String email = "jan@test.pl";
+        UpdatePatientCommand updatePatientCommand = new UpdatePatientCommand("zajety@test.pl", "Piotr", "Nowak",
+                "987654321", LocalDate.of(2025, 1, 10));
+        Patient patient = new Patient(1L, "jan@test.pl", "1234", "0001", "Jan", "Kowalski",
+                "111", LocalDate.of(2015, 10, 25));
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.of(patient));
+        when(patientRepository.existsByEmailIgnoreCase(updatePatientCommand.email())).thenReturn(true);
+        // when
+        PatientAlreadyExistsException alreadyExistsException = assertThrows(
+                PatientAlreadyExistsException.class,
+                () -> patientService.updatePatient(email, updatePatientCommand)
+        );
+        // then
+        assertAll(
+                () -> assertEquals("You cannot change the email address to one that already exists", alreadyExistsException.getMessage()),
+                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus()),
+                () -> assertEquals("jan@test.pl", patient.getEmail()),
+                () -> assertEquals("Jan", patient.getFirstName())
+        );
+        verify(patientRepository, never()).save(any());
+    }
+
+    @Test
+    void addPatient_IdCardNoAlreadyExists_ThrowsPatientAlreadyExistsException() {
+        // given
+        String email = "jan@test.pl";
+        CreatePatientCommand createPatientCommand = new CreatePatientCommand("nowy@test.pl", "1234", "0001",
+                "Piotr", "Nowak", "987654321", LocalDate.of(2025, 1, 10));
+        Patient patient = new Patient(1L, "jan@test.pl", "1234", "0001", "Jan", "Kowalski",
+                "111", LocalDate.of(2015, 10, 25));
+        when(patientRepository.findByEmailIgnoreCase(email)).thenReturn(Optional.empty());
+        when(patientRepository.existsByIdCardNo(createPatientCommand.idCardNo())).thenReturn(true);
+        // when
+        PatientAlreadyExistsException alreadyExistsException = assertThrows(
+                PatientAlreadyExistsException.class, () -> patientService.addPatient(createPatientCommand)
+        );
+        // then
+        assertAll(
+                () -> assertEquals("The patient with the provided IdCardNo already exists", alreadyExistsException.getMessage()),
+                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
+        );
+        verify(patientRepository, never()).save(any());
     }
 }

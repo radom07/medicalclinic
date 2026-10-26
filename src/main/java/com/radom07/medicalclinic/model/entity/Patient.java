@@ -15,6 +15,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 @Getter
 @Setter
@@ -26,30 +27,29 @@ import java.time.LocalDate;
 public class Patient {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(nullable = false, unique = true)
+    @Column(name = "EMAIL", nullable = false, unique = true)
     private String email;
-    @Column(nullable = false)
+    @Column(name = "PASSWORD", nullable = false)
     private String password;
     @Column(name = "ID_CARD", nullable = false, unique = true)
+    @Setter(AccessLevel.PRIVATE)
     private String idCardNo;
-    @Column(name = "FIRST_NAME")
+    @Column(name = "FIRST_NAME", nullable = false)
     private String firstName;
-    @Column(name = "LAST_NAME")
+    @Column(name = "LAST_NAME", nullable = false)
     private String lastName;
-    @Column(name = "PHONE_NUMBER")
+    @Column(name = "PHONE_NUMBER", nullable = false)
     private String phoneNumber;
-    @Column
+    @Column(name = "BIRTHDAY", nullable = false)
     private LocalDate birthday;
 
     public void update(UpdatePatientCommand updatedData) {
-        this.email = updatedData.email();
-        this.password = updatedData.password();
-        this.idCardNo = updatedData.idCardNo();
-        this.firstName = updatedData.firstName();
-        this.lastName = updatedData.lastName();
-        this.phoneNumber = updatedData.phoneNumber();
-        this.birthday = updatedData.birthday();
+        this.email = Objects.requireNonNull(updatedData.email());
+        this.firstName = Objects.requireNonNull(updatedData.firstName());
+        this.lastName = Objects.requireNonNull(updatedData.lastName());
+        this.phoneNumber = Objects.requireNonNull(updatedData.phoneNumber());
+        this.birthday = Objects.requireNonNull(updatedData.birthday());
     }
 }
