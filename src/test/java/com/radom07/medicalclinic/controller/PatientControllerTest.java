@@ -18,17 +18,13 @@ import tools.jackson.databind.ObjectMapper;
 import java.time.LocalDate;
 import java.util.List;
 
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest // zalecany nawet MockMvcWeb
+@SpringBootTest // zalecany MockMvcWeb
 @AutoConfigureMockMvc
 class PatientControllerTest {
 
@@ -43,11 +39,11 @@ class PatientControllerTest {
     void getPatients_DataCorrect_Response200() throws Exception {
         // given
         List<PatientDto> patients = List.of(
-                new PatientDto("jan@test.pl", "Jan", "Kowalski",
+                new PatientDto(1L, "jan@test.pl", "Jan", "Kowalski", "jankowalski",
                         "111222333", LocalDate.of(2015, 10, 25)),
-                new PatientDto("anna@test.pl", "Anna", "Nowak",
+                new PatientDto(2L, "anna@test.pl", "Anna", "Nowak", "annanowak",
                         "444555666", LocalDate.of(2018, 5, 12)),
-                new PatientDto("piotr@test.pl", "Piotr", "Wiśniewski",
+                new PatientDto(3L, "piotr@test.pl", "Piotr", "Wiśniewski", "piotrw",
                         "555666777", LocalDate.of(2020, 1, 15))
         );
         when(patientService.getPatients()).thenReturn(patients);
@@ -55,9 +51,11 @@ class PatientControllerTest {
         mockMvc.perform(get("/patients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(3))
+                .andExpect(jsonPath("$.[0].id").value(1))
                 .andExpect(jsonPath("$.[0].email").value("jan@test.pl"))
                 .andExpect(jsonPath("$.[0].firstName").value("Jan"))
                 .andExpect(jsonPath("$.[0].lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.[0].userName").value("jankowalski"))
                 .andExpect(jsonPath("$.[0].phoneNumber").value("111222333"))
                 .andExpect(jsonPath("$.[0].birthday").value("2015-10-25"))
                 .andExpect(jsonPath("$.[1].lastName").value("Nowak"))
@@ -70,15 +68,17 @@ class PatientControllerTest {
     void getPatientByEmail_DataCorrect_Response200() throws Exception {
         // given
         String email = "piotr@test.pl";
-        PatientDto patientDto = new PatientDto("piotr@test.pl", "Piotr", "Wiśniewski",
+        PatientDto patientDto = new PatientDto(3L, "piotr@test.pl", "Piotr", "Wiśniewski", "piotrw",
                 "555666777", LocalDate.of(2020, 1, 15));
         when(patientService.getByEmail(email)).thenReturn(patientDto);
         // when & then
         mockMvc.perform(get("/patients/{email}", email))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(3))
                 .andExpect(jsonPath("$.email").value("piotr@test.pl"))
                 .andExpect(jsonPath("$.firstName").value("Piotr"))
                 .andExpect(jsonPath("$.lastName").value("Wiśniewski"))
+                .andExpect(jsonPath("$.userName").value("piotrw"))
                 .andExpect(jsonPath("$.phoneNumber").value("555666777"))
                 .andExpect(jsonPath("$.birthday").value("2020-01-15"));
         verify(patientService).getByEmail(email);
@@ -87,6 +87,7 @@ class PatientControllerTest {
 
     @Test
     void getPatientByEmail_PatientNotFound_Response404() throws Exception {
+        // given
         String email = "piotr@test.pl";
         when(patientService.getByEmail(email)).thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
         // when & then
@@ -103,8 +104,8 @@ class PatientControllerTest {
     void addPatient_DataCorrect_Response201() throws Exception {
         // given
         CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
-        PatientDto patientDto = new PatientDto("test@test.pl", "Jan", "Kowalski",
+                "Kowalski", "jankowalski", "123456789", LocalDate.of(2015, 10, 25));
+        PatientDto patientDto = new PatientDto(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski",
                 "123456789", LocalDate.of(2015, 10, 25));
         when(patientService.addPatient(command)).thenReturn(patientDto);
         // when & then
@@ -112,9 +113,11 @@ class PatientControllerTest {
                         .content(objectMapper.writeValueAsString(command))
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.email").value("test@test.pl"))
                 .andExpect(jsonPath("$.firstName").value("Jan"))
                 .andExpect(jsonPath("$.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.userName").value("jankowalski"))
                 .andExpect(jsonPath("$.phoneNumber").value("123456789"))
                 .andExpect(jsonPath("$.birthday").value("2015-10-25"));
         verify(patientService).addPatient(command);
@@ -125,8 +128,9 @@ class PatientControllerTest {
     void addPatient_PatientAlreadyExists_Response400() throws Exception {
         // given
         CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
-        when(patientService.addPatient(command)).thenThrow(new PatientAlreadyExistsException("The patient with the provided email address already exists"));
+                "Kowalski", "jankowalski", "123456789", LocalDate.of(2015, 10, 25));
+        when(patientService.addPatient(command))
+                .thenThrow(new PatientAlreadyExistsException("The patient with the provided email address already exists"));
         // when & then
         mockMvc.perform(post("/patients")
                         .content(objectMapper.writeValueAsString(command))
@@ -137,6 +141,40 @@ class PatientControllerTest {
                 .andExpect(jsonPath("$.message").value("The patient with the provided email address already exists"))
                 .andExpect(jsonPath("$.path").value("/patients"))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void addPatient_NullValues_Response400() throws Exception {
+        // given
+        String invalidPayload = """
+                {
+                    "email": null,
+                    "password": null,
+                    "idCardNo": null,
+                    "firstName": null,
+                    "lastName": null,
+                    "userName": null,
+                    "phoneNumber": null,
+                    "birthday": null
+                }
+                """;
+        // when & then
+        mockMvc.perform(post("/patients")
+                        .content(invalidPayload)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.fieldErrors.email").exists())
+                .andExpect(jsonPath("$.fieldErrors.password").exists())
+                .andExpect(jsonPath("$.fieldErrors.idCardNo").exists())
+                .andExpect(jsonPath("$.fieldErrors.firstName").exists())
+                .andExpect(jsonPath("$.fieldErrors.lastName").exists())
+                .andExpect(jsonPath("$.fieldErrors.userName").exists())
+                .andExpect(jsonPath("$.fieldErrors.phoneNumber").exists())
+                .andExpect(jsonPath("$.fieldErrors.birthday").exists());
+        verifyNoInteractions(patientService);
     }
 
     @Test
@@ -171,9 +209,9 @@ class PatientControllerTest {
     void updatePatient_DataCorrect_Response200() throws Exception {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "Jan",
-                "Kowalski", LocalDate.of(2015, 10, 25));
-        PatientDto patientDto = new PatientDto("test@test.pl", "Jan", "Kowalski",
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "Jan", "Kowalski",
+                "123456789", "jankowalski", LocalDate.of(2015, 10, 25));
+        PatientDto patientDto = new PatientDto(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski",
                 "123456789", LocalDate.of(2015, 10, 25));
         when(patientService.updatePatient(email, command)).thenReturn(patientDto);
         // when & then
@@ -181,21 +219,25 @@ class PatientControllerTest {
                         .content(objectMapper.writeValueAsString(command))
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.email").value("test@test.pl"))
                 .andExpect(jsonPath("$.firstName").value("Jan"))
                 .andExpect(jsonPath("$.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.userName").value("jankowalski"))
                 .andExpect(jsonPath("$.phoneNumber").value("123456789"))
                 .andExpect(jsonPath("$.birthday").value("2015-10-25"));
-
+        verify(patientService).updatePatient(email, command);
+        verifyNoMoreInteractions(patientService);
     }
 
     @Test
     void updatePatient_PatientNotFound_Response404() throws Exception {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "Jan",
-                "Kowalski", LocalDate.of(2015, 10, 25));
-        when(patientService.updatePatient(email, command)).thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "Jan", "Kowalski",
+                "123456789", "jankowalski", LocalDate.of(2015, 10, 25));
+        when(patientService.updatePatient(email, command))
+                .thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
         // when & then
         mockMvc.perform(put("/patients/{email}", email)
                         .content(objectMapper.writeValueAsString(command))
@@ -209,44 +251,6 @@ class PatientControllerTest {
     }
 
     @Test
-    void updatePassword_DataCorrect_Response200() throws Exception {
-        // given
-        ChangePasswordCommand command = new ChangePasswordCommand("0000");
-        String email = "test@test.pl";
-        PatientDto patientDto = new PatientDto("test@test.pl", "Jan", "Kowalski",
-                "123456789", LocalDate.of(2015, 10, 25));
-        when(patientService.updatePassword(anyString(), anyString())).thenReturn(patientDto);
-        // when & then
-        mockMvc.perform(patch("/patients/{email}/password", email)
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(APPLICATION_JSON))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("test@test.pl"))
-                .andExpect(jsonPath("$.firstName").value("Jan"))
-                .andExpect(jsonPath("$.lastName").value("Kowalski"))
-                .andExpect(jsonPath("$.phoneNumber").value("123456789"))
-                .andExpect(jsonPath("$.birthday").value("2015-10-25"));
-    }
-
-    @Test
-    void updatePassword_PatientNotFound_Response404() throws Exception {
-        // given
-        ChangePasswordCommand command = new ChangePasswordCommand("0000");
-        String email = "test@test.pl";
-        when(patientService.updatePassword(anyString(), anyString())).thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
-        // when & then
-        mockMvc.perform(patch("/patients/{email}/password", email)
-                        .content(objectMapper.writeValueAsString(command))
-                        .contentType(APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.status").value(404))
-                .andExpect(jsonPath("$.error").value("Not Found"))
-                .andExpect(jsonPath("$.message").value("The patient with the provided email address does not exist"))
-                .andExpect(jsonPath("$.path").value("/patients/test@test.pl/password"))
-                .andExpect(jsonPath("$.timestamp").exists());
-    }
-
-    @Test
     void updatePatient_NullValues_Response400() throws Exception {
         // given
         String email = "test@test.pl";
@@ -256,6 +260,7 @@ class PatientControllerTest {
                     "firstName": null,
                     "lastName": null,
                     "phoneNumber": null,
+                    "userName": null,
                     "birthday": null
                 }
                 """;
@@ -269,6 +274,54 @@ class PatientControllerTest {
                 .andExpect(jsonPath("$.message").value("Validation failed"))
                 .andExpect(jsonPath("$.fieldErrors.email").exists())
                 .andExpect(jsonPath("$.fieldErrors.firstName").exists())
+                .andExpect(jsonPath("$.fieldErrors.lastName").exists())
+                .andExpect(jsonPath("$.fieldErrors.phoneNumber").exists())
+                .andExpect(jsonPath("$.fieldErrors.userName").exists())
                 .andExpect(jsonPath("$.fieldErrors.birthday").exists());
+        verifyNoInteractions(patientService);
+    }
+
+    @Test
+    void updatePassword_DataCorrect_Response200() throws Exception {
+        // given
+        String email = "test@test.pl";
+        ChangePasswordCommand command = new ChangePasswordCommand("0000");
+        PatientDto patientDto = new PatientDto(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski",
+                "123456789", LocalDate.of(2015, 10, 25));
+        when(patientService.updatePassword(email, "0000")).thenReturn(patientDto);
+        // when & then
+        mockMvc.perform(patch("/patients/{email}/password", email)
+                        .content(objectMapper.writeValueAsString(command))
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.email").value("test@test.pl"))
+                .andExpect(jsonPath("$.firstName").value("Jan"))
+                .andExpect(jsonPath("$.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.userName").value("jankowalski"))
+                .andExpect(jsonPath("$.phoneNumber").value("123456789"))
+                .andExpect(jsonPath("$.birthday").value("2015-10-25"))
+                .andExpect(jsonPath("$.password").doesNotExist());
+        verify(patientService).updatePassword(email, "0000");
+        verifyNoMoreInteractions(patientService);
+    }
+
+    @Test
+    void updatePassword_PatientNotFound_Response404() throws Exception {
+        // given
+        String email = "test@test.pl";
+        ChangePasswordCommand command = new ChangePasswordCommand("0000");
+        when(patientService.updatePassword(email, "0000"))
+                .thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
+        // when & then
+        mockMvc.perform(patch("/patients/{email}/password", email)
+                        .content(objectMapper.writeValueAsString(command))
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("The patient with the provided email address does not exist"))
+                .andExpect(jsonPath("$.path").value("/patients/test@test.pl/password"))
+                .andExpect(jsonPath("$.timestamp").exists());
     }
 }

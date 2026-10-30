@@ -1,11 +1,14 @@
 package com.radom07.medicalclinic.model.entity;
 
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -23,33 +26,33 @@ import java.util.Objects;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "PATIENT")
+@Table(name = "PATIENTS")
 public class Patient {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    @Column(name = "EMAIL", nullable = false, unique = true)
-    private String email;
-    @Column(name = "PASSWORD", nullable = false)
-    private String password;
     @Column(name = "ID_CARD", nullable = false, unique = true)
     @Setter(AccessLevel.PRIVATE)
     private String idCardNo;
-    @Column(name = "FIRST_NAME", nullable = false)
-    private String firstName;
-    @Column(name = "LAST_NAME", nullable = false)
-    private String lastName;
     @Column(name = "PHONE_NUMBER", nullable = false)
     private String phoneNumber;
     @Column(name = "BIRTHDAY", nullable = false)
     private LocalDate birthday;
+    @OneToOne(cascade = CascadeType.ALL) //  {CascadeType.PERSIST, CascadeType.MERGE} miałem takie, ale DELETE PATIENT = internal server error
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
 
     public void update(UpdatePatientCommand updatedData) {
-        this.email = Objects.requireNonNull(updatedData.email());
-        this.firstName = Objects.requireNonNull(updatedData.firstName());
-        this.lastName = Objects.requireNonNull(updatedData.lastName());
         this.phoneNumber = Objects.requireNonNull(updatedData.phoneNumber());
         this.birthday = Objects.requireNonNull(updatedData.birthday());
+        if (this.user != null) {
+            this.user.updateUserData(
+                    updatedData.firstName(),
+                    updatedData.lastName(),
+                    updatedData.email(),
+                    updatedData.userName()
+            );
+        }
     }
 }

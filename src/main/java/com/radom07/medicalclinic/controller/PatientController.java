@@ -40,7 +40,7 @@ public class PatientController {
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePatient(@PathVariable @Email String email) {
+    public void deletePatientByEmail(@PathVariable @Email String email) {
         patientService.deleteByEmail(email);
     }
 
