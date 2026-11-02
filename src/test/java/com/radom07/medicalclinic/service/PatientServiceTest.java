@@ -1,7 +1,7 @@
 package com.radom07.medicalclinic.service;
 
+import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
-import com.radom07.medicalclinic.command.CreatePatientProfileCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.exception.PatientAlreadyExistsException;
 import com.radom07.medicalclinic.exception.PatientNotFoundException;
@@ -371,7 +371,7 @@ class PatientServiceTest {
     }
 
     @Test
-    void createPatientProfile_DataCorrect_ReturnPatientDto() {
+    void assignPatientToUser_DataCorrect_ReturnPatientDto() {
         // given
         Long userId = 1L;
         User user = User.builder()
@@ -382,13 +382,13 @@ class PatientServiceTest {
                 .userName("jankowalski")
                 .password("1234")
                 .build();
-        CreatePatientProfileCommand command = new CreatePatientProfileCommand("0001", "123456789",
+        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
                 LocalDate.of(2015, 10, 25));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(patientRepository.existsByUserEmailIgnoreCase("test@test.pl")).thenReturn(false);
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
         // when
-        PatientDto patientDto = patientService.createPatientProfile(userId, command);
+        PatientDto patientDto = patientService.assignPatientToUser(command);
         // then
         assertAll(
                 () -> assertEquals("test@test.pl", patientDto.email()),
@@ -403,27 +403,26 @@ class PatientServiceTest {
     }
 
     @Test
-    void createPatientProfile_UserNotFound_ThrowsUserNotFoundException() {
+    void assignPatientToUser_UserNotFound_ThrowsUserNotFoundException() {
         // given
         Long userId = 99L;
-        CreatePatientProfileCommand command = new CreatePatientProfileCommand("0001", "123456789",
+        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
                 LocalDate.of(2015, 10, 25));
         when(userRepository.findById(userId)).thenReturn(Optional.empty());
         // when
         UserNotFoundException notFoundException = assertThrows(
-                UserNotFoundException.class, () -> patientService.createPatientProfile(userId, command)
+                UserNotFoundException.class, () -> patientService.assignPatientToUser(command)
         );
         // then
         assertAll(
                 () -> assertEquals("The user with the provided id does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
-        verify(userRepository).findById(userId);
         verifyNoInteractions(patientRepository);
     }
 
     @Test
-    void createPatientProfile_UserAlreadyHasProfile_ThrowsPatientAlreadyExistsException() {
+    void assignPatientToUser_UserAlreadyHasProfile_ThrowsPatientAlreadyExistsException() {
         // given
         Long userId = 1L;
         User user = User.builder()
@@ -434,13 +433,13 @@ class PatientServiceTest {
                 .userName("jankowalski")
                 .password("1234")
                 .build();
-        CreatePatientProfileCommand command = new CreatePatientProfileCommand("0001", "123456789",
+        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
                 LocalDate.of(2015, 10, 25));
         when(userRepository.findById(userId)).thenReturn(Optional.of(user));
         when(patientRepository.existsByUserEmailIgnoreCase("test@test.pl")).thenReturn(true);
         // when
         PatientAlreadyExistsException alreadyExistsException = assertThrows(
-                PatientAlreadyExistsException.class, () -> patientService.createPatientProfile(userId, command)
+                PatientAlreadyExistsException.class, () -> patientService.assignPatientToUser(command)
         );
         // then
         assertAll(

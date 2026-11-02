@@ -1,10 +1,12 @@
 package com.radom07.medicalclinic.controller;
 
+import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.ChangePasswordCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.exception.PatientAlreadyExistsException;
 import com.radom07.medicalclinic.exception.PatientNotFoundException;
+import com.radom07.medicalclinic.exception.UserNotFoundException;
 import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.service.PatientService;
 import org.junit.jupiter.api.Test;
@@ -323,5 +325,49 @@ class PatientControllerTest {
                 .andExpect(jsonPath("$.message").value("The patient with the provided email address does not exist"))
                 .andExpect(jsonPath("$.path").value("/patients/test@test.pl/password"))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void assignPatientToUser_DataCorrect_Response201_DataCorrect_Response201() throws Exception {
+        // given
+        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
+                LocalDate.of(2015, 10, 20));
+        PatientDto patientDto = new PatientDto(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski",
+                "123456789", LocalDate.of(2015, 10, 25));
+        when(patientService.assignPatientToUser(command)).thenReturn(patientDto);
+        // when & then
+        mockMvc.perform(post("/patients/user")
+                .content(objectMapper.writeValueAsString(command))
+                .contentType(APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.email").value("test@test.pl"))
+                .andExpect(jsonPath("$.firstName").value("Jan"))
+                .andExpect(jsonPath("$.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.userName").value("jankowalski"))
+                .andExpect(jsonPath("$.phoneNumber").value("123456789"))
+                .andExpect(jsonPath("$.birthday").value("2015-10-25"));
+        verify(patientService).assignPatientToUser(command);
+        verifyNoMoreInteractions(patientService);
+    }
+
+    @Test
+    void assignPatientToUser_UserNotFound_Response404() throws Exception {
+        // given
+        AssignPatientToUserCommand command = new AssignPatientToUserCommand(99L, "0001", "123456789",
+                LocalDate.of(2015, 10, 20));
+        when(patientService.assignPatientToUser(command))
+                .thenThrow(new UserNotFoundException("The user with the provided id does not exist"));
+        // when & then
+        mockMvc.perform(post("/patients/user")
+                        .content(objectMapper.writeValueAsString(command))
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.error").value("Not Found"))
+                .andExpect(jsonPath("$.message").value("The user with the provided id does not exist"))
+                .andExpect(jsonPath("$.path").value("/patients/user"))
+                .andExpect(jsonPath("$.timestamp").exists());
+        verify(patientService).assignPatientToUser(command);
     }
 }

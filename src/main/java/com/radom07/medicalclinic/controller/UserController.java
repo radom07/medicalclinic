@@ -1,10 +1,7 @@
 package com.radom07.medicalclinic.controller;
 
-import com.radom07.medicalclinic.command.CreatePatientProfileCommand;
 import com.radom07.medicalclinic.command.CreateUserCommand;
-import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.model.dto.UserDto;
-import com.radom07.medicalclinic.service.PatientService;
 import com.radom07.medicalclinic.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -28,14 +25,12 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-    private final PatientService patientService;
 
     @GetMapping
     public List<UserDto> getUsers() {
         return userService.getUsers();
     }
 
-    // GET /users/abc zwróci 500
     @GetMapping("/{id}")
     public UserDto getUserById(@PathVariable Long id) {
         return userService.getById(id);
@@ -51,11 +46,5 @@ public class UserController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteUserById(@PathVariable Long id) {
         userService.deleteById(id);
-    }
-
-    @PostMapping("/{id}/patient")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PatientDto createPatientProfileFromUser(@PathVariable Long id, @Valid @RequestBody CreatePatientProfileCommand command) {
-        return patientService.createPatientProfile(id, command);
     }
 }

@@ -39,8 +39,8 @@ public class Patient {
     private String phoneNumber;
     @Column(name = "BIRTHDAY", nullable = false)
     private LocalDate birthday;
-    @OneToOne(cascade = CascadeType.ALL) //  {CascadeType.PERSIST, CascadeType.MERGE} miałem takie, ale DELETE PATIENT = internal server error
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "USER_ID", nullable = false, unique = true)
     private User user;
 
     public void update(UpdatePatientCommand updatedData) {

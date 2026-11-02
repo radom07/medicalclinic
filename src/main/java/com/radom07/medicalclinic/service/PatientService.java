@@ -1,7 +1,7 @@
 package com.radom07.medicalclinic.service;
 
+import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
-import com.radom07.medicalclinic.command.CreatePatientProfileCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.exception.PatientAlreadyExistsException;
 import com.radom07.medicalclinic.exception.PatientNotFoundException;
@@ -77,8 +77,8 @@ public class PatientService {
         return mapper.toDto(patient);
     }
 
-    public PatientDto createPatientProfile(Long userId, CreatePatientProfileCommand command) {
-        User user = userRepository.findById(userId)
+    public PatientDto assignPatientToUser(AssignPatientToUserCommand command) {
+        User user = userRepository.findById(command.userId())
                 .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
         if (patientRepository.existsByUserEmailIgnoreCase(user.getEmail())) {
             throw new PatientAlreadyExistsException("This user already has a patient profile");

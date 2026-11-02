@@ -1,7 +1,7 @@
 package com.radom07.medicalclinic.mapper;
 
+import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
-import com.radom07.medicalclinic.command.CreatePatientProfileCommand;
 import com.radom07.medicalclinic.model.dto.PatientDto;
 import com.radom07.medicalclinic.model.entity.Patient;
 import com.radom07.medicalclinic.model.entity.User;
@@ -20,8 +20,6 @@ public interface PatientMapper {
                 .userName(command.userName())
                 .password(command.password())
                 .build();
-
-
         return Patient.builder()
                 .idCardNo(command.idCardNo())
                 .phoneNumber(command.phoneNumber())
@@ -38,5 +36,5 @@ public interface PatientMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "user", source = "user")
-    Patient toEntity(CreatePatientProfileCommand command, User user);
+    Patient toEntity(AssignPatientToUserCommand command, User user);
 }
