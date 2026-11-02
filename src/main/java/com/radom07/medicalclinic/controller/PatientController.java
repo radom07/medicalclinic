@@ -1,5 +1,6 @@
 package com.radom07.medicalclinic.controller;
 
+import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.ChangePasswordCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
@@ -40,7 +41,7 @@ public class PatientController {
 
     @DeleteMapping("/{email}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deletePatient(@PathVariable @Email String email) {
+    public void deletePatientByEmail(@PathVariable @Email String email) {
         patientService.deleteByEmail(email);
     }
 
@@ -52,5 +53,11 @@ public class PatientController {
     @PatchMapping("/{email}/password")
     public PatientDto updatePassword(@PathVariable @Email String email, @Valid @RequestBody ChangePasswordCommand command) {
         return patientService.updatePassword(email, command.password());
+    }
+
+    @PostMapping("/user")
+    @ResponseStatus(HttpStatus.CREATED)
+    public PatientDto assignPatientToUser(@Valid @RequestBody AssignPatientToUserCommand command) {
+        return patientService.assignPatientToUser(command);
     }
 }
