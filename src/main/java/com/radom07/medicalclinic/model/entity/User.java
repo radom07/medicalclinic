@@ -1,5 +1,6 @@
 package com.radom07.medicalclinic.model.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -39,7 +40,7 @@ public class User {
     @Column(name = "PASSWORD", nullable = false)
     private String password;
 
-    @OneToOne(mappedBy = "user")
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE)
     private Patient patient;
 
     public void updateUserData(String firstName, String lastName, String email, String userName) {
