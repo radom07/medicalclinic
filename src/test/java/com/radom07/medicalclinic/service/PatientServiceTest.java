@@ -40,7 +40,7 @@ class PatientServiceTest {
         this.patientRepository = Mockito.mock(PatientRepository.class);
         this.userRepository = Mockito.mock(UserRepository.class);
         this.patientMapper = Mappers.getMapper(PatientMapper.class);
-        this.patientService = new PatientService(patientRepository, patientMapper, userRepository);
+        this.patientService = new PatientService(patientRepository, userRepository, patientMapper);
     }
 
     private Patient buildPatient(Long id, String email, String firstName, String lastName, String userName, String idCardNo,

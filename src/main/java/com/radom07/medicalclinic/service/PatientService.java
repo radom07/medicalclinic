@@ -24,8 +24,8 @@ import java.util.Objects;
 public class PatientService {
 
     private final PatientRepository patientRepository;
-    private final PatientMapper mapper;
     private final UserRepository userRepository;
+    private final PatientMapper mapper;
 
     public List<PatientDto> getPatients() {
         return patientRepository.findAll().stream()

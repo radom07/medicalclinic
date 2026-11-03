@@ -12,5 +12,6 @@ public record PatientDto(
         String lastName,
         String userName,
         String phoneNumber,
-        LocalDate birthday) {
+        LocalDate birthday
+) {
 }
