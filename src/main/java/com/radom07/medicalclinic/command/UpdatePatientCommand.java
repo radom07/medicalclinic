@@ -6,11 +6,12 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record UpdatePatientCommand(@NotBlank @Email String email,
-                                   @NotBlank String password,
-                                   @NotBlank String idCardNo,
-                                   @NotBlank String firstName,
-                                   @NotBlank String lastName,
-                                   @NotBlank String phoneNumber,
-                                   @NotNull LocalDate birthday) {
+public record UpdatePatientCommand(
+        @NotBlank @Email String email,
+        @NotBlank String firstName,
+        @NotBlank String lastName,
+        @NotBlank String phoneNumber,
+        @NotBlank String userName,
+        @NotNull LocalDate birthday
+) {
 }
