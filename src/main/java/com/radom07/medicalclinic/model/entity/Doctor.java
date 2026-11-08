@@ -33,12 +33,12 @@ public class Doctor {
             name = "DOCTOR_FACILITIES",
             joinColumns = @JoinColumn(name = "DOCTOR_ID"),
             inverseJoinColumns = @JoinColumn(name = "MEDICAL_FACILITY_ID"))
-    private Set<MedicalFacility> medicalFacilities = new HashSet<>();
+    private Set<Facility> facilities = new HashSet<>();
     @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinColumn(name = "USER_ID", nullable = false, unique = true)
     private User user;
 
-    public void addMedicalFacility(MedicalFacility facility) {
-        this.medicalFacilities.add(facility);
+    public void addFacility(Facility facility) {
+        this.facilities.add(facility);
     }
 }

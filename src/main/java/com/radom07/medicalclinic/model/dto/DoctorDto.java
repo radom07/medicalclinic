@@ -8,6 +8,6 @@ public record DoctorDto(
         String lastName,
         String email,
         String specialization,
-        List<String> medicalFacilitiesNames
+        List<String> facilitiesNames
 ) {
 }

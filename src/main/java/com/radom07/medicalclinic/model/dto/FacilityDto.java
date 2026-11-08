@@ -2,7 +2,7 @@ package com.radom07.medicalclinic.model.dto;
 
 import java.util.Set;
 
-public record MedicalFacilityDto(
+public record FacilityDto(
         Long id,
         String name,
         String city,

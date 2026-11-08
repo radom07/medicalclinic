@@ -1,6 +1,7 @@
 package com.radom07.medicalclinic.command;
 
 import com.radom07.medicalclinic.model.Specialization;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -8,13 +9,13 @@ import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
 public record CreateDoctorCommand(
-        @NotBlank @Email String email,
-        @NotBlank String password,
-        @NotBlank String firstName,
-        @NotBlank String lastName,
-        @NotBlank String userName,
-        @NotNull Specialization specialization,
-        @NotBlank String medicalLicenseNo,
-        List<Long> facilityIds
+        @Schema(example = "jan@test.pl") @NotBlank @Email String email,
+        @Schema(example = "haslo123") @NotBlank String password,
+        @Schema(example = "Jan") @NotBlank String firstName,
+        @Schema(example = "Kowalski") @NotBlank String lastName,
+        @Schema(example = "jankowalski") @NotBlank String userName,
+        @Schema(example = "CARDIOLOGIST") @NotNull Specialization specialization,
+        @Schema(example = "ABC1234567") @NotBlank String medicalLicenseNo,
+        @Schema(example = "[1, 2]") List<Long> facilityIds
         ) {
 }

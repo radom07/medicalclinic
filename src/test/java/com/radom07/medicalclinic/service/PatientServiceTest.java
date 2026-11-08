@@ -182,7 +182,7 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("The patient with the provided email address already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus())
         );
         verify(patientRepository, never()).save(any());
     }
@@ -202,7 +202,7 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("The patient with the provided IdCardNo already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus())
         );
         verify(patientRepository, never()).save(any());
     }
@@ -321,7 +321,7 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("You cannot change the email address to one that already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus()),
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus()),
                 () -> assertEquals("jan@test.pl", patient.getUser().getEmail()),
                 () -> assertEquals("Jan", patient.getUser().getFirstName())
         );
@@ -444,7 +444,7 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("This user already has a patient profile", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus())
         );
         verify(patientRepository, never()).save(any());
     }

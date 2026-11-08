@@ -1,9 +1,9 @@
 package com.radom07.medicalclinic.mapper;
 
-import com.radom07.medicalclinic.command.CreateMedicalFacilityCommand;
-import com.radom07.medicalclinic.model.dto.MedicalFacilityDto;
+import com.radom07.medicalclinic.command.CreateFacilityCommand;
+import com.radom07.medicalclinic.model.dto.FacilityDto;
 import com.radom07.medicalclinic.model.entity.Doctor;
-import com.radom07.medicalclinic.model.entity.MedicalFacility;
+import com.radom07.medicalclinic.model.entity.Facility;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -12,12 +12,12 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
-public interface MedicalFacilityMapper {
+public interface FacilityMapper {
 
-    MedicalFacility toEntity(CreateMedicalFacilityCommand command);
+    Facility toEntity(CreateFacilityCommand command);
 
     @Mapping(source = "doctors", target = "doctorsSpecialization")
-    MedicalFacilityDto toDto(MedicalFacility medicalFacility);
+    FacilityDto toDto(Facility facility);
 
     default Set<String> mapDoctorsToSpecializations(Set<Doctor> doctors) {
         if (doctors == null) {

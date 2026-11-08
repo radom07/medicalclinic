@@ -135,7 +135,7 @@ public class UserServiceTest {
         // then
         assertAll(
                 () -> assertEquals("The user with the provided email address already exists", exception.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, exception.getHttpStatus())
+                () -> assertEquals(HttpStatus.CONFLICT, exception.getHttpStatus())
         );
         verify(userRepository, never()).save(any());
     }

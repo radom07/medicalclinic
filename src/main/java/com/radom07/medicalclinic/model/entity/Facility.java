@@ -21,7 +21,7 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "MEDICAL_FACILITIES")
-public class MedicalFacility {
+public class Facility {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +38,6 @@ public class MedicalFacility {
     private String buildingNo;
     @Column(name = "PHONE_NUMBER")
     private String phoneNumber;
-    @ManyToMany(mappedBy = "medicalFacilities")
+    @ManyToMany(mappedBy = "facilities")
     private Set<Doctor> doctors;
 }

@@ -5,15 +5,15 @@ import com.radom07.medicalclinic.command.AssignDoctorToUserCommand;
 import com.radom07.medicalclinic.command.CreateDoctorCommand;
 import com.radom07.medicalclinic.exception.DoctorAlreadyExistsException;
 import com.radom07.medicalclinic.exception.DoctorNotFoundException;
-import com.radom07.medicalclinic.exception.MedicalFacilityNotFoundException;
+import com.radom07.medicalclinic.exception.FacilityNotFoundException;
 import com.radom07.medicalclinic.exception.UserNotFoundException;
 import com.radom07.medicalclinic.mapper.DoctorMapper;
 import com.radom07.medicalclinic.model.dto.DoctorDto;
 import com.radom07.medicalclinic.model.entity.Doctor;
-import com.radom07.medicalclinic.model.entity.MedicalFacility;
+import com.radom07.medicalclinic.model.entity.Facility;
 import com.radom07.medicalclinic.model.entity.User;
 import com.radom07.medicalclinic.repository.DoctorRepository;
-import com.radom07.medicalclinic.repository.MedicalFacilityRepository;
+import com.radom07.medicalclinic.repository.FacilityRepository;
 import com.radom07.medicalclinic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +29,7 @@ public class DoctorService {
 
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
-    private final MedicalFacilityRepository medicalFacilityRepository;
+    private final FacilityRepository facilityRepository;
     private final DoctorMapper mapper;
 
     public List<DoctorDto> getDoctors() {
@@ -51,13 +51,7 @@ public class DoctorService {
         if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
             throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
         }
-        Set<MedicalFacility> commandFacilities = new HashSet<>();
-        if (command.facilityIds() != null && !command.facilityIds().isEmpty()) {
-            commandFacilities = new HashSet<>(medicalFacilityRepository.findAllById(command.facilityIds()));
-            if (commandFacilities.size() != command.facilityIds().size()) {
-                throw new MedicalFacilityNotFoundException("One or more facilities not found");
-            }
-        }
+        Set<Facility> commandFacilities = getValidatedFacilities(command.facilityIds());
         return mapper.toDto(doctorRepository.save(mapper.toEntity(command, commandFacilities)));
     }
 
@@ -72,9 +66,9 @@ public class DoctorService {
     public DoctorDto assignDoctorToFacility(AssignDoctorToFacilityCommand command) {
         Doctor doctor = doctorRepository.findById(command.doctorId())
                 .orElseThrow(() -> new DoctorNotFoundException("The doctor with the provided id does not exist"));
-        MedicalFacility medicalFacility = medicalFacilityRepository.findById(command.facilityId())
-                .orElseThrow(() -> new MedicalFacilityNotFoundException("The medical facility with provided id does not exist"));
-        doctor.addMedicalFacility(medicalFacility);
+        Facility facility = facilityRepository.findById(command.facilityId())
+                .orElseThrow(() -> new FacilityNotFoundException("The medical facility with provided id does not exist"));
+        doctor.addFacility(facility);
         doctorRepository.save(doctor);
         return mapper.toDto(doctor);
     }
@@ -89,5 +83,16 @@ public class DoctorService {
             throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
         }
         return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user)));
+    }
+
+    private Set<Facility> getValidatedFacilities(List<Long> facilityIds) {
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        List<Facility> facilities = facilityRepository.findAllById(facilityIds);
+        if (facilities.size() != facilityIds.size()) {
+            throw new FacilityNotFoundException("One or more facilities not found");
+        }
+        return new HashSet<>(facilities);
     }
 }

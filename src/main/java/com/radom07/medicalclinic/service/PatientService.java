@@ -58,11 +58,11 @@ public class PatientService {
     }
 
     public PatientDto updatePatient(String email, UpdatePatientCommand command) {
-        Patient existingPatient = patientRepository.findByUserEmailIgnoreCase(email)
-                .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         if (!email.equalsIgnoreCase(command.email()) && patientRepository.existsByUserEmailIgnoreCase(command.email())) {
             throw new PatientAlreadyExistsException("You cannot change the email address to one that already exists");
         }
+        Patient existingPatient = patientRepository.findByUserEmailIgnoreCase(email)
+                .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         existingPatient.update(command);
         patientRepository.save(existingPatient);
         return mapper.toDto(existingPatient);

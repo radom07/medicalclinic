@@ -127,7 +127,7 @@ class PatientControllerTest {
     }
 
     @Test
-    void addPatient_PatientAlreadyExists_Response400() throws Exception {
+    void addPatient_PatientAlreadyExists_Response409() throws Exception {
         // given
         CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
                 "Kowalski", "jankowalski", "123456789", LocalDate.of(2015, 10, 25));
@@ -137,9 +137,8 @@ class PatientControllerTest {
         mockMvc.perform(post("/patients")
                         .content(objectMapper.writeValueAsString(command))
                         .contentType(APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
-                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("The patient with the provided email address already exists"))
                 .andExpect(jsonPath("$.path").value("/patients"))
                 .andExpect(jsonPath("$.timestamp").exists());

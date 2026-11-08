@@ -13,7 +13,7 @@ import java.util.List;
 public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByPatientIsNullAndStartTimeAfter(LocalDateTime time);
 
-    List<Visit> findByPatientUserEmailIgnoreCase(String email);
+    List<Visit> findByPatientId(Long id);
 
     @Query(
             "SELECT COUNT(v) FROM Visit v "

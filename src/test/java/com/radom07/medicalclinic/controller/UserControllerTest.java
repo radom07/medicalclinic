@@ -103,7 +103,7 @@ class UserControllerTest {
     }
 
     @Test
-    void addUser_UserAlreadyExists_Response400() throws Exception {
+    void addUser_UserAlreadyExists_Response409() throws Exception {
         // given
         CreateUserCommand command = new CreateUserCommand("Jan", "Kowalski", "jan@test.pl", "jankowalski", "haslo123");
         when(userService.addUser(command))
@@ -112,8 +112,8 @@ class UserControllerTest {
         mockMvc.perform(post("/users")
                         .content(objectMapper.writeValueAsString(command))
                         .contentType(APPLICATION_JSON))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
                 .andExpect(jsonPath("$.message").value("The user with the provided email address already exists"));
     }
 
