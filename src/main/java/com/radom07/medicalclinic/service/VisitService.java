@@ -30,6 +30,15 @@ public class VisitService {
     private final PatientRepository patientRepository;
     private final VisitMapper mapper;
 
+    public List<VisitDto> getVisitsByCriteria(Long patientId, boolean available) {
+        if (patientId != null) {
+            return getPatientVisits(patientId);
+        } else if (available) {
+            return getAvailableVisits();
+        } else
+            return getAllVisits();
+    }
+
     public List<VisitDto> getAllVisits() {
         return visitRepository.findAll()
                 .stream()
@@ -46,13 +55,6 @@ public class VisitService {
 
     public List<VisitDto> getPatientVisits(Long id) {
         return visitRepository.findByPatientId(id)
-                .stream()
-                .map(mapper::toDto)
-                .toList();
-    }
-
-    public List<VisitDto> getDoctorVisits(Long id) {
-        return visitRepository.findByDoctorId(id)
                 .stream()
                 .map(mapper::toDto)
                 .toList();

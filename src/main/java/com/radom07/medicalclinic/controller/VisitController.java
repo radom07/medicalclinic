@@ -44,20 +44,10 @@ public class VisitController {
     public List<VisitDto> getVisits(
             @Parameter(description = "Filter by patient's id")
             @RequestParam(name = "patientId", required = false) Long patientId,
-            @Parameter(description = "Filter by doctor's id")
-            @RequestParam(name = "doctorId", required = false) Long doctorId,
             @Parameter(description = "Set to true to get only available visits")
             @RequestParam(name = "available", required = false, defaultValue = "false") boolean available
     ) {
-        if (patientId != null) {
-            return visitService.getPatientVisits(patientId);
-        } else if (doctorId != null) {
-            return visitService.getDoctorVisits(doctorId);
-        } else if (available) {
-            return visitService.getAvailableVisits();
-        } else {
-            return visitService.getAllVisits();
-        }
+        return visitService.getVisitsByCriteria(patientId, available);
     }
 
     @Operation(summary = "Create a new visit", description = "Creates an available visit slot for a doctor")
