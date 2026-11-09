@@ -1,6 +1,5 @@
 package com.radom07.medicalclinic.controller;
 
-import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.ChangePasswordCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
@@ -72,7 +71,10 @@ public class PatientController {
             @ApiResponse(responseCode = "400", description = "Invalid input provided",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorMessageDto.class))}),
-            @ApiResponse(responseCode = "409", description = "Patient with provided email or ID card already exists",
+            @ApiResponse(responseCode = "404", description = "User with provided ID does not exist",
+                    content = {@Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ErrorMessageDto.class))}),
+            @ApiResponse(responseCode = "409", description = "Patient with provided ID card already exists",
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorMessageDto.class))})
     })
@@ -150,26 +152,5 @@ public class PatientController {
                                      @Email String email,
                                      @Valid @RequestBody ChangePasswordCommand command) {
         return patientService.updatePassword(email, command.password());
-    }
-
-    @Operation(summary = "Assign patient profile to user", description = "Creates a patient profile for an existing user")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "201", description = "Patient profile assigned successfully",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = PatientDto.class))}),
-            @ApiResponse(responseCode = "400", description = "Invalid input",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorMessageDto.class))}),
-            @ApiResponse(responseCode = "404", description = "User not found",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorMessageDto.class))}),
-            @ApiResponse(responseCode = "409", description = "Patient with the provided IdCardNo already exists",
-                    content = {@Content(mediaType = "application/json",
-                            schema = @Schema(implementation = ErrorMessageDto.class))})
-    })
-    @PostMapping("/user")
-    @ResponseStatus(HttpStatus.CREATED)
-    public PatientDto assignPatientToUser(@Valid @RequestBody AssignPatientToUserCommand command) {
-        return patientService.assignPatientToUser(command);
     }
 }

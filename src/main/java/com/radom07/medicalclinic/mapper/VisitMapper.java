@@ -12,11 +12,7 @@ public interface VisitMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "patient", ignore = true)
-    @Mapping(target = "doctor", source = "doctor")
     Visit toEntity(CreateVisitCommand command, Doctor doctor);
 
-    @Mapping(source = "doctor.id", target = "doctorId")
-    @Mapping(source = "patient.id", target = "patientId")
-    @Mapping(source = "doctor.user.lastName", target = "doctorLastName")
     VisitDto toDto(Visit visit);
 }

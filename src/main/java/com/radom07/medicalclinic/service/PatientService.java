@@ -1,6 +1,5 @@
 package com.radom07.medicalclinic.service;
 
-import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.exception.PatientAlreadyExistsException;
@@ -40,13 +39,15 @@ public class PatientService {
     }
 
     public PatientDto addPatient(CreatePatientCommand command) {
-        if (patientRepository.existsByUserEmailIgnoreCase(command.email())) {
-            throw new PatientAlreadyExistsException("The patient with the provided email address already exists");
-        }
         if (patientRepository.existsByIdCardNo(command.idCardNo())) {
             throw new PatientAlreadyExistsException("The patient with the provided IdCardNo already exists");
         }
-        return mapper.toDto(patientRepository.save(mapper.toEntity(command)));
+        User user = userRepository.findById(command.userId())
+                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
+        if (user.getPatient() != null) {
+            throw new PatientAlreadyExistsException("This user is already a patient");
+        }
+        return mapper.toDto(patientRepository.save(mapper.toEntity(command, user)));
     }
 
     @Transactional
@@ -75,17 +76,5 @@ public class PatientService {
         patient.getUser().setPassword(password);
         patientRepository.save(patient);
         return mapper.toDto(patient);
-    }
-
-    public PatientDto assignPatientToUser(AssignPatientToUserCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
-        if (patientRepository.existsByUserEmailIgnoreCase(user.getEmail())) {
-            throw new PatientAlreadyExistsException("This user already has a patient profile");
-        }
-        if (patientRepository.existsByIdCardNo(command.idCardNo())) {
-            throw new PatientAlreadyExistsException("The patient with the provided IdCardNo already exists");
-        }
-        return mapper.toDto(patientRepository.save(mapper.toEntity(command, user)));
     }
 }

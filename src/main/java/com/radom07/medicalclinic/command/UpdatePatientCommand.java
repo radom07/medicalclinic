@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PastOrPresent;
 
 import java.time.LocalDate;
-
+// Zostało z pierwszych zadań, można się zastanowić nad sensem aktualizacji w ten sposób
 public record UpdatePatientCommand(
         @Schema(example = "nowy@test.pl") @NotBlank @Email String email,
         @Schema(example = "Piotr") @NotBlank String firstName,

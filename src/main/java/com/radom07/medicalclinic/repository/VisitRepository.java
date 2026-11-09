@@ -14,6 +14,7 @@ public interface VisitRepository extends JpaRepository<Visit, Long> {
     List<Visit> findByPatientIsNullAndStartTimeAfter(LocalDateTime time);
 
     List<Visit> findByPatientId(Long id);
+    List<Visit> findByDoctorId(Long id);
 
     @Query(
             "SELECT COUNT(v) FROM Visit v "

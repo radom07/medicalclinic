@@ -17,11 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -36,27 +36,28 @@ public class VisitController {
 
     private final VisitService visitService;
 
-    @Operation(summary = "Get all available visits", description = "Returns all upcoming visits that are not yet booked")
+    @Operation(summary = "Get all visits", description = "Returns all visits, can be filtered")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all available visits")
+            @ApiResponse(responseCode = "200", description = "Found all visits")
     })
-    @GetMapping("/available")
-    public List<VisitDto> getAvailableVisits() {
-        return visitService.getAvailableVisits();
-    }
-
-    @Operation(summary = "Get all visits of a patient", description = "Returns all visits booked by a patient with provided id")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all patient's visits")
-    })
-    @GetMapping("/patient/{id}")
-    public List<VisitDto> getPatientVisits(@PathVariable("id")
-                                           @Parameter(
-                                                   name = "id",
-                                                   description = "Patient's id",
-                                                   example = "1")
-                                           Long id) {
-        return visitService.getPatientVisits(id);
+    @GetMapping()
+    public List<VisitDto> getVisits(
+            @Parameter(description = "Filter by patient's id")
+            @RequestParam(name = "patientId", required = false) Long patientId,
+            @Parameter(description = "Filter by doctor's id")
+            @RequestParam(name = "doctorId", required = false) Long doctorId,
+            @Parameter(description = "Set to true to get only available visits")
+            @RequestParam(name = "available", required = false, defaultValue = "false") boolean available
+    ) {
+        if (patientId != null) {
+            return visitService.getPatientVisits(patientId);
+        } else if (doctorId != null) {
+            return visitService.getDoctorVisits(doctorId);
+        } else if (available) {
+            return visitService.getAvailableVisits();
+        } else {
+            return visitService.getAllVisits();
+        }
     }
 
     @Operation(summary = "Create a new visit", description = "Creates an available visit slot for a doctor")
@@ -95,7 +96,7 @@ public class VisitController {
                     content = {@Content(mediaType = "application/json",
                             schema = @Schema(implementation = ErrorMessageDto.class))})
     })
-    @PatchMapping("/{id}/book")
+    @PostMapping("/{id}/book")
     public VisitDto bookVisit(@PathVariable("id")
                               @Parameter(
                                       name = "id",
@@ -103,6 +104,6 @@ public class VisitController {
                                       example = "1")
                               Long id,
                               @Valid @RequestBody BookVisitCommand command) {
-        return visitService.bookVisit(id, command.patientEmail());
+        return visitService.bookVisit(id, command.patientId());
     }
 }

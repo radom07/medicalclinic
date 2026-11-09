@@ -4,9 +4,7 @@ import java.util.List;
 
 public record DoctorDto(
         Long id,
-        String firstName,
-        String lastName,
-        String email,
+        UserDto user,
         String specialization,
         List<String> facilitiesNames
 ) {

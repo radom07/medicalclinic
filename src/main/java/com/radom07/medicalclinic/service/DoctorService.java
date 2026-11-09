@@ -1,8 +1,7 @@
 package com.radom07.medicalclinic.service;
 
-import com.radom07.medicalclinic.command.AssignDoctorToFacilityCommand;
-import com.radom07.medicalclinic.command.AssignDoctorToUserCommand;
 import com.radom07.medicalclinic.command.CreateDoctorCommand;
+import com.radom07.medicalclinic.exception.DoctorAlreadyAssignedToFacility;
 import com.radom07.medicalclinic.exception.DoctorAlreadyExistsException;
 import com.radom07.medicalclinic.exception.DoctorNotFoundException;
 import com.radom07.medicalclinic.exception.FacilityNotFoundException;
@@ -45,14 +44,16 @@ public class DoctorService {
     }
 
     public DoctorDto addDoctor(CreateDoctorCommand command) {
-        if (doctorRepository.existsByUserEmailIgnoreCase(command.email())) {
-            throw new DoctorAlreadyExistsException("The doctor with the provided email address already exists");
-        }
         if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
             throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
         }
+        User user = userRepository.findById(command.userId())
+                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
+        if (user.getDoctor() != null) {
+            throw new DoctorAlreadyExistsException("This user is already a doctor");
+        }
         Set<Facility> commandFacilities = getValidatedFacilities(command.facilityIds());
-        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, commandFacilities)));
+        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user, commandFacilities)));
     }
 
     @Transactional
@@ -63,26 +64,17 @@ public class DoctorService {
         doctorRepository.deleteByUserEmail(email);
     }
 
-    public DoctorDto assignDoctorToFacility(AssignDoctorToFacilityCommand command) {
-        Doctor doctor = doctorRepository.findById(command.doctorId())
+    public DoctorDto assignDoctorToFacility(Long doctorId, Long facilityId) {
+        Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException("The doctor with the provided id does not exist"));
-        Facility facility = facilityRepository.findById(command.facilityId())
+        Facility facility = facilityRepository.findById(facilityId)
                 .orElseThrow(() -> new FacilityNotFoundException("The medical facility with provided id does not exist"));
+        if (doctor.getFacilities().contains(facility)) {
+            throw new DoctorAlreadyAssignedToFacility("The doctor is already assigned to facility");
+        }
         doctor.addFacility(facility);
         doctorRepository.save(doctor);
         return mapper.toDto(doctor);
-    }
-
-    public DoctorDto assignDoctorToUser(AssignDoctorToUserCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
-        if (doctorRepository.existsByUserEmailIgnoreCase(user.getEmail())) {
-            throw new DoctorAlreadyExistsException("This user already has a doctor profile");
-        }
-        if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
-            throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
-        }
-        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user)));
     }
 
     private Set<Facility> getValidatedFacilities(List<Long> facilityIds) {

@@ -30,6 +30,13 @@ public class VisitService {
     private final PatientRepository patientRepository;
     private final VisitMapper mapper;
 
+    public List<VisitDto> getAllVisits() {
+        return visitRepository.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
     public List<VisitDto> getAvailableVisits() {
         return visitRepository.findByPatientIsNullAndStartTimeAfter(LocalDateTime.now())
                 .stream()
@@ -39,6 +46,13 @@ public class VisitService {
 
     public List<VisitDto> getPatientVisits(Long id) {
         return visitRepository.findByPatientId(id)
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    public List<VisitDto> getDoctorVisits(Long id) {
+        return visitRepository.findByDoctorId(id)
                 .stream()
                 .map(mapper::toDto)
                 .toList();
@@ -54,14 +68,14 @@ public class VisitService {
         return mapper.toDto(visitRepository.save(mapper.toEntity(command, doctor)));
     }
 
-    public VisitDto bookVisit(Long visitId, String patientEmail) {
+    public VisitDto bookVisit(Long visitId, Long patientId) {
         Visit visit = visitRepository.findById(visitId)
                 .orElseThrow(() -> new VisitNotFoundException("The visit with the provided id does not exist"));
         TimeVisitValidator.validateTimeInFuture(visit.getStartTime(), LocalDateTime.now());
         if (visit.getPatient() != null) {
             throw new VisitAlreadyBookedException("This visit is already booked");
         }
-        Patient patient = patientRepository.findByUserEmailIgnoreCase(patientEmail)
+        Patient patient = patientRepository.findById(patientId)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         visit.setPatient(patient);
         return mapper.toDto(visitRepository.save(visit));
