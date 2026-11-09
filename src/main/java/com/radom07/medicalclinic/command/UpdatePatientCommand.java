@@ -7,8 +7,6 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDate;
 
 public record UpdatePatientCommand(@NotBlank @Email String email,
-                                   @NotBlank String password,
-                                   @NotBlank String idCardNo,
                                    @NotBlank String firstName,
                                    @NotBlank String lastName,
                                    @NotBlank String phoneNumber,

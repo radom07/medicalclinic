@@ -171,8 +171,8 @@ class PatientControllerTest {
     void updatePatient_DataCorrect_Response200() throws Exception {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "Jan",
+                "Kowalski", LocalDate.of(2015, 10, 25));
         PatientDto patientDto = new PatientDto("test@test.pl", "Jan", "Kowalski",
                 "123456789", LocalDate.of(2015, 10, 25));
         when(patientService.updatePatient(email, command)).thenReturn(patientDto);
@@ -193,11 +193,11 @@ class PatientControllerTest {
     void updatePatient_PatientNotFound_Response404() throws Exception {
         // given
         String email = "test@test.pl";
-        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "123456789", LocalDate.of(2015, 10, 25));
+        UpdatePatientCommand command = new UpdatePatientCommand("test@test.pl", "1234", "Jan",
+                "Kowalski", LocalDate.of(2015, 10, 25));
         when(patientService.updatePatient(email, command)).thenThrow(new PatientNotFoundException("The patient with the provided email address does not exist"));
         // when & then
-        mockMvc.perform(put("/patients/{emial}", email)
+        mockMvc.perform(put("/patients/{email}", email)
                         .content(objectMapper.writeValueAsString(command))
                         .contentType(APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -244,5 +244,31 @@ class PatientControllerTest {
                 .andExpect(jsonPath("$.message").value("The patient with the provided email address does not exist"))
                 .andExpect(jsonPath("$.path").value("/patients/test@test.pl/password"))
                 .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void updatePatient_NullValues_Response400() throws Exception {
+        // given
+        String email = "test@test.pl";
+        String invalidPayload = """
+                {
+                    "email": null,
+                    "firstName": null,
+                    "lastName": null,
+                    "phoneNumber": null,
+                    "birthday": null
+                }
+                """;
+        // when & then
+        mockMvc.perform(put("/patients/{email}", email)
+                        .content(invalidPayload)
+                        .contentType(APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.error").value("Bad Request"))
+                .andExpect(jsonPath("$.message").value("Validation failed"))
+                .andExpect(jsonPath("$.fieldErrors.email").exists())
+                .andExpect(jsonPath("$.fieldErrors.firstName").exists())
+                .andExpect(jsonPath("$.fieldErrors.birthday").exists());
     }
 }

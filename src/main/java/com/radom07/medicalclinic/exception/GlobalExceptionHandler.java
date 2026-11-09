@@ -20,10 +20,7 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /*
-    na now() można użyć formattera z ISO
-    request.getRequestURI można użyć URLDecoder lub UriUtils poniważ teraz -> "path": "/patients/mail%40mai.pl"
-     */
+    // request.getRequestURI -> "path": "/patients/mail%40mai.pl"
     @ExceptionHandler(MedicalClinicException.class)
     public ResponseEntity<ErrorMessageDto> handleMedicalClinicException(MedicalClinicException e, HttpServletRequest request) {
         ErrorMessageDto errorMessage = new ErrorMessageDto(
@@ -57,7 +54,7 @@ public class GlobalExceptionHandler {
             fieldErrors.put(error.getField(), error.getDefaultMessage());
         });
         ValidationErrorDto validationError = new ValidationErrorDto(
-                LocalDateTime.now(),
+                LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Validation failed",
@@ -83,7 +80,7 @@ public class GlobalExceptionHandler {
         }
 
         ValidationErrorDto validationError = new ValidationErrorDto(
-                LocalDateTime.now(),
+                LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
                 HttpStatus.BAD_REQUEST.value(),
                 HttpStatus.BAD_REQUEST.getReasonPhrase(),
                 "Validation failed for request parameters",
