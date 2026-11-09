@@ -2,8 +2,8 @@ package com.radom07.medicalclinic.exception;
 
 import org.springframework.http.HttpStatus;
 
-public class MedicalFacilityNotFoundException extends MedicalClinicException {
-    public MedicalFacilityNotFoundException(String message) {
+public class VisitNotFoundException extends MedicalClinicException {
+    public VisitNotFoundException(String message) {
         super(message, HttpStatus.NOT_FOUND);
     }
 }

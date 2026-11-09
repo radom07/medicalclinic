@@ -1,6 +1,5 @@
 package com.radom07.medicalclinic.service;
 
-import com.radom07.medicalclinic.command.AssignPatientToUserCommand;
 import com.radom07.medicalclinic.command.CreatePatientCommand;
 import com.radom07.medicalclinic.command.UpdatePatientCommand;
 import com.radom07.medicalclinic.exception.PatientAlreadyExistsException;
@@ -43,9 +42,8 @@ class PatientServiceTest {
         this.patientService = new PatientService(patientRepository, userRepository, patientMapper);
     }
 
-    private Patient buildPatient(Long id, String email, String firstName, String lastName, String userName, String idCardNo,
-                                 String phoneNumber, LocalDate birthday) {
-        User user = User.builder()
+    private User buildUser(Long id, String email, String firstName, String lastName, String userName) {
+        return User.builder()
                 .id(id)
                 .email(email)
                 .firstName(firstName)
@@ -53,6 +51,11 @@ class PatientServiceTest {
                 .userName(userName)
                 .password("1234")
                 .build();
+    }
+
+    private Patient buildPatient(Long id, String email, String firstName, String lastName, String userName, String idCardNo,
+                                 String phoneNumber, LocalDate birthday) {
+        User user = buildUser(id, email, firstName, lastName, userName);
         return Patient.builder()
                 .id(id)
                 .idCardNo(idCardNo)
@@ -80,24 +83,27 @@ class PatientServiceTest {
         assertAll(
                 () -> assertEquals(3, patientsDto.size()),
                 () -> assertEquals(1L, patientsDto.get(0).id()),
-                () -> assertEquals("jan@test.pl", patientsDto.get(0).email()),
-                () -> assertEquals("Jan", patientsDto.get(0).firstName()),
-                () -> assertEquals("Kowalski", patientsDto.get(0).lastName()),
-                () -> assertEquals("jankowalski", patientsDto.get(0).userName()),
+                () -> assertEquals(1L, patientsDto.get(0).user().id()),
+                () -> assertEquals("jan@test.pl", patientsDto.get(0).user().email()),
+                () -> assertEquals("Jan", patientsDto.get(0).user().firstName()),
+                () -> assertEquals("Kowalski", patientsDto.get(0).user().lastName()),
+                () -> assertEquals("jankowalski", patientsDto.get(0).user().userName()),
                 () -> assertEquals("111", patientsDto.get(0).phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientsDto.get(0).birthday()),
                 () -> assertEquals(2L, patientsDto.get(1).id()),
-                () -> assertEquals("anna@test.pl", patientsDto.get(1).email()),
-                () -> assertEquals("Anna", patientsDto.get(1).firstName()),
-                () -> assertEquals("Nowak", patientsDto.get(1).lastName()),
-                () -> assertEquals("annanowak", patientsDto.get(1).userName()),
+                () -> assertEquals(2L, patientsDto.get(1).user().id()),
+                () -> assertEquals("anna@test.pl", patientsDto.get(1).user().email()),
+                () -> assertEquals("Anna", patientsDto.get(1).user().firstName()),
+                () -> assertEquals("Nowak", patientsDto.get(1).user().lastName()),
+                () -> assertEquals("annanowak", patientsDto.get(1).user().userName()),
                 () -> assertEquals("222", patientsDto.get(1).phoneNumber()),
                 () -> assertEquals(LocalDate.of(2018, 5, 12), patientsDto.get(1).birthday()),
                 () -> assertEquals(3L, patientsDto.get(2).id()),
-                () -> assertEquals("piotr@test.pl", patientsDto.get(2).email()),
-                () -> assertEquals("Piotr", patientsDto.get(2).firstName()),
-                () -> assertEquals("Wiśniewski", patientsDto.get(2).lastName()),
-                () -> assertEquals("piotrw", patientsDto.get(2).userName()),
+                () -> assertEquals(3L, patientsDto.get(2).user().id()),
+                () -> assertEquals("piotr@test.pl", patientsDto.get(2).user().email()),
+                () -> assertEquals("Piotr", patientsDto.get(2).user().firstName()),
+                () -> assertEquals("Wiśniewski", patientsDto.get(2).user().lastName()),
+                () -> assertEquals("piotrw", patientsDto.get(2).user().userName()),
                 () -> assertEquals("333", patientsDto.get(2).phoneNumber()),
                 () -> assertEquals(LocalDate.of(2020, 1, 15), patientsDto.get(2).birthday())
         );
@@ -117,10 +123,11 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals(1L, patientDto.id()),
-                () -> assertEquals("test@test.pl", patientDto.email()),
-                () -> assertEquals("Jan", patientDto.firstName()),
-                () -> assertEquals("Kowalski", patientDto.lastName()),
-                () -> assertEquals("jankowalski", patientDto.userName()),
+                () -> assertEquals(1L, patientDto.user().id()),
+                () -> assertEquals("test@test.pl", patientDto.user().email()),
+                () -> assertEquals("Jan", patientDto.user().firstName()),
+                () -> assertEquals("Kowalski", patientDto.user().lastName()),
+                () -> assertEquals("jankowalski", patientDto.user().userName()),
                 () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
@@ -149,51 +156,32 @@ class PatientServiceTest {
     @Test
     void addPatient_DataCorrect_ReturnPatientDto() {
         // given
-        CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "jankowalski", "123456789", LocalDate.of(2015, 10, 25));
-        when(patientRepository.existsByUserEmailIgnoreCase(command.email())).thenReturn(false);
+        CreatePatientCommand command = new CreatePatientCommand(1L, "0001", "123456789", LocalDate.of(2015, 10, 25));
+        User user = buildUser(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski");
         when(patientRepository.existsByIdCardNo(command.idCardNo())).thenReturn(false);
+        when(userRepository.findById(command.userId())).thenReturn(Optional.of(user));
         when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
         // when
         PatientDto patientDto = patientService.addPatient(command);
         // then
         assertAll(
-                () -> assertEquals("test@test.pl", patientDto.email()),
-                () -> assertEquals("Jan", patientDto.firstName()),
-                () -> assertEquals("Kowalski", patientDto.lastName()),
-                () -> assertEquals("jankowalski", patientDto.userName()),
+                () -> assertEquals(1L, patientDto.user().id()),
+                () -> assertEquals("test@test.pl", patientDto.user().email()),
+                () -> assertEquals("Jan", patientDto.user().firstName()),
+                () -> assertEquals("Kowalski", patientDto.user().lastName()),
+                () -> assertEquals("jankowalski", patientDto.user().userName()),
                 () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
-        verify(patientRepository).existsByUserEmailIgnoreCase(command.email());
         verify(patientRepository).existsByIdCardNo(command.idCardNo());
-    }
-
-    @Test
-    void addPatient_PatientAlreadyExists_ThrowsPatientAlreadyExistsException() {
-        // given
-        CreatePatientCommand command = new CreatePatientCommand("test@test.pl", "1234", "0001", "Jan",
-                "Kowalski", "jankowalski", "123456789", LocalDate.of(2015, 10, 25));
-        when(patientRepository.existsByUserEmailIgnoreCase("test@test.pl")).thenReturn(true);
-        // when
-        PatientAlreadyExistsException alreadyExistsException = assertThrows(
-                PatientAlreadyExistsException.class, () -> patientService.addPatient(command)
-        );
-        // then
-        assertAll(
-                () -> assertEquals("The patient with the provided email address already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
-        );
-        verify(patientRepository, never()).save(any());
+        verify(userRepository).findById(command.userId());
+        verify(patientRepository).save(any(Patient.class));
     }
 
     @Test
     void addPatient_IdCardNoAlreadyExists_ThrowsPatientAlreadyExistsException() {
         // given
-        String email = "jan@test.pl";
-        CreatePatientCommand command = new CreatePatientCommand("nowy@test.pl", "1234", "0001", "Piotr",
-                "Nowak", "piotrnowak", "987654321", LocalDate.of(2025, 1, 10));
-        when(patientRepository.existsByUserEmailIgnoreCase(command.email())).thenReturn(false);
+        CreatePatientCommand command = new CreatePatientCommand(1L, "0001", "123456789", LocalDate.of(2015, 10, 25));
         when(patientRepository.existsByIdCardNo(command.idCardNo())).thenReturn(true);
         // when
         PatientAlreadyExistsException alreadyExistsException = assertThrows(
@@ -202,7 +190,54 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("The patient with the provided IdCardNo already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus())
+        );
+        verifyNoInteractions(userRepository);
+        verify(patientRepository, never()).save(any());
+    }
+
+    @Test
+    void addPatient_UserNotFound_ThrowsUserNotFoundException() {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(99L, "0001", "123456789", LocalDate.of(2015, 10, 25));
+        when(patientRepository.existsByIdCardNo(command.idCardNo())).thenReturn(false);
+        when(userRepository.findById(command.userId())).thenReturn(Optional.empty());
+        // when
+        UserNotFoundException notFoundException = assertThrows(
+                UserNotFoundException.class, () -> patientService.addPatient(command)
+        );
+        // then
+        assertAll(
+                () -> assertEquals("The user with the provided id does not exist", notFoundException.getMessage()),
+                () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
+        );
+        verify(userRepository).findById(command.userId());
+        verify(patientRepository, never()).save(any());
+    }
+
+    @Test
+    void addPatient_UserAlreadyPatient_ThrowsPatientAlreadyExistsException() {
+        // given
+        CreatePatientCommand command = new CreatePatientCommand(1L, "0002", "123456789", LocalDate.of(2015, 10, 25));
+        User user = buildUser(1L, "test@test.pl", "Jan", "Kowalski", "jankowalski");
+        Patient existingPatient = Patient.builder()
+                .id(1L)
+                .idCardNo("0001")
+                .phoneNumber("111")
+                .birthday(LocalDate.of(2015, 10, 25))
+                .user(user)
+                .build();
+        user.setPatient(existingPatient);
+        when(patientRepository.existsByIdCardNo(command.idCardNo())).thenReturn(false);
+        when(userRepository.findById(command.userId())).thenReturn(Optional.of(user));
+        // when
+        PatientAlreadyExistsException alreadyExistsException = assertThrows(
+                PatientAlreadyExistsException.class, () -> patientService.addPatient(command)
+        );
+        // then
+        assertAll(
+                () -> assertEquals("This user is already a patient", alreadyExistsException.getMessage()),
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus())
         );
         verify(patientRepository, never()).save(any());
     }
@@ -251,10 +286,10 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals(1L, patientDto.id()),
-                () -> assertEquals("test@test.pl", patientDto.email()),
-                () -> assertEquals("Piotr", patientDto.firstName()),
-                () -> assertEquals("Nowak", patientDto.lastName()),
-                () -> assertEquals("piotrnowak", patientDto.userName()),
+                () -> assertEquals("test@test.pl", patientDto.user().email()),
+                () -> assertEquals("Piotr", patientDto.user().firstName()),
+                () -> assertEquals("Nowak", patientDto.user().lastName()),
+                () -> assertEquals("piotrnowak", patientDto.user().userName()),
                 () -> assertEquals("987654321", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2025, 1, 10), patientDto.birthday()),
                 () -> assertEquals("0001", patient.get().getIdCardNo())
@@ -278,7 +313,7 @@ class PatientServiceTest {
         PatientDto patientDto = patientService.updatePatient(email, command);
         // then
         assertAll(
-                () -> assertEquals("nowy@test.pl", patientDto.email()),
+                () -> assertEquals("nowy@test.pl", patientDto.user().email()),
                 () -> assertEquals("nowy@test.pl", patient.getUser().getEmail())
         );
         verify(patientRepository).existsByUserEmailIgnoreCase("nowy@test.pl");
@@ -311,7 +346,6 @@ class PatientServiceTest {
                 "987654321", "piotrnowak", LocalDate.of(2025, 1, 10));
         Patient patient = buildPatient(1L, "jan@test.pl", "Jan", "Kowalski", "jankowalski",
                 "0001", "111", LocalDate.of(2015, 10, 25));
-        when(patientRepository.findByUserEmailIgnoreCase(email)).thenReturn(Optional.of(patient));
         when(patientRepository.existsByUserEmailIgnoreCase(updatePatientCommand.email())).thenReturn(true);
         // when
         PatientAlreadyExistsException alreadyExistsException = assertThrows(
@@ -321,7 +355,7 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("You cannot change the email address to one that already exists", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus()),
+                () -> assertEquals(HttpStatus.CONFLICT, alreadyExistsException.getHttpStatus()),
                 () -> assertEquals("jan@test.pl", patient.getUser().getEmail()),
                 () -> assertEquals("Jan", patient.getUser().getFirstName())
         );
@@ -341,10 +375,10 @@ class PatientServiceTest {
         // then
         assertAll(
                 () -> assertEquals("4321", patient.get().getUser().getPassword()),
-                () -> assertEquals("test@test.pl", patientDto.email()),
-                () -> assertEquals("Jan", patientDto.firstName()),
-                () -> assertEquals("Kowalski", patientDto.lastName()),
-                () -> assertEquals("jankowalski", patientDto.userName()),
+                () -> assertEquals("test@test.pl", patientDto.user().email()),
+                () -> assertEquals("Jan", patientDto.user().firstName()),
+                () -> assertEquals("Kowalski", patientDto.user().lastName()),
+                () -> assertEquals("jankowalski", patientDto.user().userName()),
                 () -> assertEquals("123456789", patientDto.phoneNumber()),
                 () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
         );
@@ -366,85 +400,6 @@ class PatientServiceTest {
         assertAll(
                 () -> assertEquals("The patient with the provided email address does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
-        );
-        verify(patientRepository, never()).save(any());
-    }
-
-    @Test
-    void assignPatientToUser_DataCorrect_ReturnPatientDto() {
-        // given
-        Long userId = 1L;
-        User user = User.builder()
-                .id(userId)
-                .email("test@test.pl")
-                .firstName("Jan")
-                .lastName("Kowalski")
-                .userName("jankowalski")
-                .password("1234")
-                .build();
-        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
-                LocalDate.of(2015, 10, 25));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(patientRepository.existsByUserEmailIgnoreCase("test@test.pl")).thenReturn(false);
-        when(patientRepository.save(any(Patient.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        // when
-        PatientDto patientDto = patientService.assignPatientToUser(command);
-        // then
-        assertAll(
-                () -> assertEquals("test@test.pl", patientDto.email()),
-                () -> assertEquals("Jan", patientDto.firstName()),
-                () -> assertEquals("Kowalski", patientDto.lastName()),
-                () -> assertEquals("jankowalski", patientDto.userName()),
-                () -> assertEquals("123456789", patientDto.phoneNumber()),
-                () -> assertEquals(LocalDate.of(2015, 10, 25), patientDto.birthday())
-        );
-        verify(userRepository).findById(userId);
-        verify(patientRepository).existsByUserEmailIgnoreCase("test@test.pl");
-    }
-
-    @Test
-    void assignPatientToUser_UserNotFound_ThrowsUserNotFoundException() {
-        // given
-        Long userId = 99L;
-        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
-                LocalDate.of(2015, 10, 25));
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        // when
-        UserNotFoundException notFoundException = assertThrows(
-                UserNotFoundException.class, () -> patientService.assignPatientToUser(command)
-        );
-        // then
-        assertAll(
-                () -> assertEquals("The user with the provided id does not exist", notFoundException.getMessage()),
-                () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
-        );
-        verifyNoInteractions(patientRepository);
-    }
-
-    @Test
-    void assignPatientToUser_UserAlreadyHasProfile_ThrowsPatientAlreadyExistsException() {
-        // given
-        Long userId = 1L;
-        User user = User.builder()
-                .id(userId)
-                .email("test@test.pl")
-                .firstName("Jan")
-                .lastName("Kowalski")
-                .userName("jankowalski")
-                .password("1234")
-                .build();
-        AssignPatientToUserCommand command = new AssignPatientToUserCommand(1L, "0001", "123456789",
-                LocalDate.of(2015, 10, 25));
-        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
-        when(patientRepository.existsByUserEmailIgnoreCase("test@test.pl")).thenReturn(true);
-        // when
-        PatientAlreadyExistsException alreadyExistsException = assertThrows(
-                PatientAlreadyExistsException.class, () -> patientService.assignPatientToUser(command)
-        );
-        // then
-        assertAll(
-                () -> assertEquals("This user already has a patient profile", alreadyExistsException.getMessage()),
-                () -> assertEquals(HttpStatus.BAD_REQUEST, alreadyExistsException.getHttpStatus())
         );
         verify(patientRepository, never()).save(any());
     }

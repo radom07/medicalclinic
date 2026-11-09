@@ -1,19 +1,18 @@
 package com.radom07.medicalclinic.service;
 
-import com.radom07.medicalclinic.command.AssignDoctorToFacilityCommand;
-import com.radom07.medicalclinic.command.AssignDoctorToUserCommand;
 import com.radom07.medicalclinic.command.CreateDoctorCommand;
+import com.radom07.medicalclinic.exception.DoctorAlreadyAssignedToFacility;
 import com.radom07.medicalclinic.exception.DoctorAlreadyExistsException;
 import com.radom07.medicalclinic.exception.DoctorNotFoundException;
-import com.radom07.medicalclinic.exception.MedicalFacilityNotFoundException;
+import com.radom07.medicalclinic.exception.FacilityNotFoundException;
 import com.radom07.medicalclinic.exception.UserNotFoundException;
 import com.radom07.medicalclinic.mapper.DoctorMapper;
 import com.radom07.medicalclinic.model.dto.DoctorDto;
 import com.radom07.medicalclinic.model.entity.Doctor;
-import com.radom07.medicalclinic.model.entity.MedicalFacility;
+import com.radom07.medicalclinic.model.entity.Facility;
 import com.radom07.medicalclinic.model.entity.User;
 import com.radom07.medicalclinic.repository.DoctorRepository;
-import com.radom07.medicalclinic.repository.MedicalFacilityRepository;
+import com.radom07.medicalclinic.repository.FacilityRepository;
 import com.radom07.medicalclinic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,7 +28,7 @@ public class DoctorService {
 
     private final DoctorRepository doctorRepository;
     private final UserRepository userRepository;
-    private final MedicalFacilityRepository medicalFacilityRepository;
+    private final FacilityRepository facilityRepository;
     private final DoctorMapper mapper;
 
     public List<DoctorDto> getDoctors() {
@@ -45,20 +44,16 @@ public class DoctorService {
     }
 
     public DoctorDto addDoctor(CreateDoctorCommand command) {
-        if (doctorRepository.existsByUserEmailIgnoreCase(command.email())) {
-            throw new DoctorAlreadyExistsException("The doctor with the provided email address already exists");
-        }
         if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
             throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
         }
-        Set<MedicalFacility> commandFacilities = new HashSet<>();
-        if (command.facilityIds() != null && !command.facilityIds().isEmpty()) {
-            commandFacilities = new HashSet<>(medicalFacilityRepository.findAllById(command.facilityIds()));
-            if (commandFacilities.size() != command.facilityIds().size()) {
-                throw new MedicalFacilityNotFoundException("One or more facilities not found");
-            }
+        User user = userRepository.findById(command.userId())
+                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
+        if (user.getDoctor() != null) {
+            throw new DoctorAlreadyExistsException("This user is already a doctor");
         }
-        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, commandFacilities)));
+        Set<Facility> commandFacilities = getValidatedFacilities(command.facilityIds());
+        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user, commandFacilities)));
     }
 
     @Transactional
@@ -69,25 +64,27 @@ public class DoctorService {
         doctorRepository.deleteByUserEmail(email);
     }
 
-    public DoctorDto assignDoctorToFacility(AssignDoctorToFacilityCommand command) {
-        Doctor doctor = doctorRepository.findById(command.doctorId())
+    public DoctorDto assignDoctorToFacility(Long doctorId, Long facilityId) {
+        Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException("The doctor with the provided id does not exist"));
-        MedicalFacility medicalFacility = medicalFacilityRepository.findById(command.facilityId())
-                .orElseThrow(() -> new MedicalFacilityNotFoundException("The medical facility with provided id does not exist"));
-        doctor.addMedicalFacility(medicalFacility);
+        Facility facility = facilityRepository.findById(facilityId)
+                .orElseThrow(() -> new FacilityNotFoundException("The medical facility with provided id does not exist"));
+        if (doctor.getFacilities().contains(facility)) {
+            throw new DoctorAlreadyAssignedToFacility("The doctor is already assigned to facility");
+        }
+        doctor.addFacility(facility);
         doctorRepository.save(doctor);
         return mapper.toDto(doctor);
     }
 
-    public DoctorDto assignDoctorToUser(AssignDoctorToUserCommand command) {
-        User user = userRepository.findById(command.userId())
-                .orElseThrow(() -> new UserNotFoundException("The user with the provided id does not exist"));
-        if (doctorRepository.existsByUserEmailIgnoreCase(user.getEmail())) {
-            throw new DoctorAlreadyExistsException("This user already has a doctor profile");
+    private Set<Facility> getValidatedFacilities(List<Long> facilityIds) {
+        if (facilityIds == null || facilityIds.isEmpty()) {
+            return new HashSet<>();
         }
-        if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
-            throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
+        List<Facility> facilities = facilityRepository.findAllById(facilityIds);
+        if (facilities.size() != facilityIds.size()) {
+            throw new FacilityNotFoundException("One or more facilities not found");
         }
-        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user)));
+        return new HashSet<>(facilities);
     }
 }

@@ -2,11 +2,11 @@ package com.radom07.medicalclinic.exception;
 
 import com.radom07.medicalclinic.model.dto.ErrorMessageDto;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import jakarta.validation.Path;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -20,17 +20,16 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // request.getRequestURI -> "path": "/patients/mail%40mai.pl"
     @ExceptionHandler(MedicalClinicException.class)
-    public ResponseEntity<ErrorMessageDto> handleMedicalClinicException(MedicalClinicException e, HttpServletRequest request) {
-        ErrorMessageDto errorMessage = new ErrorMessageDto(
+    public ErrorMessageDto handleMedicalClinicException(MedicalClinicException e, HttpServletRequest request, HttpServletResponse response) {
+        response.setStatus(e.getHttpStatus().value());
+        return new ErrorMessageDto(
                 LocalDateTime.now().truncatedTo(ChronoUnit.SECONDS),
                 e.getHttpStatus().value(),
                 e.getHttpStatus().getReasonPhrase(),
                 e.getMessage(),
                 request.getRequestURI()
         );
-        return ResponseEntity.status(e.getHttpStatus()).body(errorMessage);
     }
 
     @ExceptionHandler(Exception.class)

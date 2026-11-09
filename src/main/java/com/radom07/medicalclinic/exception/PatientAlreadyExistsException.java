@@ -4,6 +4,6 @@ import org.springframework.http.HttpStatus;
 
 public class PatientAlreadyExistsException extends MedicalClinicException {
   public PatientAlreadyExistsException(String message) {
-    super(message, HttpStatus.BAD_REQUEST);
+    super(message, HttpStatus.CONFLICT);
   }
 }

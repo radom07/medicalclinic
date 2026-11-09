@@ -39,7 +39,8 @@ public class Patient {
     private String phoneNumber;
     @Column(name = "BIRTHDAY", nullable = false)
     private LocalDate birthday;
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+
+    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
     @JoinColumn(name = "USER_ID", nullable = false, unique = true)
     private User user;
 

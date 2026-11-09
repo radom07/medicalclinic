@@ -1,5 +1,6 @@
 package com.radom07.medicalclinic.model.entity;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,7 +22,7 @@ import java.util.Set;
 @Builder
 @Entity
 @Table(name = "MEDICAL_FACILITIES")
-public class MedicalFacility {
+public class Facility {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +39,6 @@ public class MedicalFacility {
     private String buildingNo;
     @Column(name = "PHONE_NUMBER")
     private String phoneNumber;
-    @ManyToMany(mappedBy = "medicalFacilities")
+    @ManyToMany(mappedBy = "facilities", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
     private Set<Doctor> doctors;
 }
