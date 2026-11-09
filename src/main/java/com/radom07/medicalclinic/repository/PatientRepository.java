@@ -8,11 +8,11 @@ import java.util.Optional;
 
 @Repository
 public interface PatientRepository extends JpaRepository<Patient, Long> {
-    Optional<Patient> findByEmailIgnoreCase(String email);
+    Optional<Patient> findByUserEmailIgnoreCase(String email);
 
-    void deleteByEmail(String email);
+    void deleteByUserEmail(String email);
 
-    boolean existsByEmailIgnoreCase(String email);
+    boolean existsByUserEmailIgnoreCase(String email);
 
     boolean existsByIdCardNo(String idCardNo);
 }

@@ -10,5 +10,6 @@ public record UpdatePatientCommand(@NotBlank @Email String email,
                                    @NotBlank String firstName,
                                    @NotBlank String lastName,
                                    @NotBlank String phoneNumber,
+                                   @NotBlank String userName,
                                    @NotNull LocalDate birthday) {
 }

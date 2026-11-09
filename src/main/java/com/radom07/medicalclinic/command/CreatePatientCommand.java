@@ -11,6 +11,7 @@ public record CreatePatientCommand(@NotBlank @Email String email,
                                    @NotBlank String idCardNo,
                                    @NotBlank String firstName,
                                    @NotBlank String lastName,
+                                   @NotBlank String userName,
                                    @NotBlank String phoneNumber,
                                    @NotNull LocalDate birthday) {
 }
