@@ -10,6 +10,17 @@ import org.mapstruct.Mapping;
 
 @Mapper(componentModel = "spring")
 public interface PatientMapper {
+
+    @Mapping(source = "user.email", target = "email")
+    @Mapping(source = "user.firstName", target = "firstName")
+    @Mapping(source = "user.lastName", target = "lastName")
+    @Mapping(source = "user.userName", target = "userName")
+    PatientDto toDto(Patient entity);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "user", source = "user")
+    Patient toEntity(AssignPatientToUserCommand command, User user);
+
     default Patient toEntity(CreatePatientCommand command) {
         if (command == null)
             return null;
@@ -27,14 +38,4 @@ public interface PatientMapper {
                 .user(user)
                 .build();
     }
-
-    @Mapping(source = "user.email", target = "email")
-    @Mapping(source = "user.firstName", target = "firstName")
-    @Mapping(source = "user.lastName", target = "lastName")
-    @Mapping(source = "user.userName", target = "userName")
-    PatientDto toDto(Patient entity);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "user", source = "user")
-    Patient toEntity(AssignPatientToUserCommand command, User user);
 }

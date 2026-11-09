@@ -43,6 +43,9 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE)
     private Patient patient;
 
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private Doctor doctor;
+
     public void updateUserData(String firstName, String lastName, String email, String userName) {
         this.firstName = Objects.requireNonNull(firstName);
         this.lastName = Objects.requireNonNull(lastName);

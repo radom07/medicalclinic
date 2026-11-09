@@ -5,9 +5,10 @@ import jakarta.validation.constraints.NotNull;
 
 import java.time.LocalDate;
 
-public record AssignPatientToUserCommand(@NotNull Long userId,
-                                         @NotBlank String idCardNo,
-                                         @NotBlank String phoneNumber,
-                                         @NotNull LocalDate birthday
+public record AssignPatientToUserCommand(
+        @NotNull Long userId,
+        @NotBlank String idCardNo,
+        @NotBlank String phoneNumber,
+        @NotNull LocalDate birthday
 ) {
 }
