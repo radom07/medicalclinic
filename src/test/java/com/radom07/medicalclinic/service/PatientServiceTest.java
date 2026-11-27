@@ -15,6 +15,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mockito;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import java.time.LocalDate;
@@ -68,6 +71,7 @@ class PatientServiceTest {
     @Test
     void getPatients_DataCorrect_ReturnPatientsDto() {
         // given
+        Pageable pageable = PageRequest.of(0, 10);
         List<Patient> patients = List.of(
                 buildPatient(1L, "jan@test.pl", "Jan", "Kowalski", "jankowalski",
                         "0001", "111", LocalDate.of(2015, 10, 25)),
@@ -76,9 +80,9 @@ class PatientServiceTest {
                 buildPatient(3L, "piotr@test.pl", "Piotr", "Wiśniewski", "piotrw",
                         "0003", "333", LocalDate.of(2020, 1, 15))
         );
-        when(patientRepository.findAll()).thenReturn(patients);
+        when(patientRepository.findAll(pageable)).thenReturn(new PageImpl<>(patients));
         // when
-        List<PatientDto> patientsDto = patientService.getPatients();
+        List<PatientDto> patientsDto = patientService.getPatients(pageable).getContent();
         // then
         assertAll(
                 () -> assertEquals(3, patientsDto.size()),
@@ -107,7 +111,7 @@ class PatientServiceTest {
                 () -> assertEquals("333", patientsDto.get(2).phoneNumber()),
                 () -> assertEquals(LocalDate.of(2020, 1, 15), patientsDto.get(2).birthday())
         );
-        verify(patientRepository).findAll();
+        verify(patientRepository).findAll(pageable);
         verifyNoMoreInteractions(patientRepository);
     }
 
@@ -251,7 +255,7 @@ class PatientServiceTest {
         patientService.deleteByEmail(email);
         // then
         verify(patientRepository).existsByUserEmailIgnoreCase(email);
-        verify(patientRepository).deleteByUserEmail(email);
+        verify(patientRepository).deleteByUserEmailIgnoreCase(email);
         verifyNoMoreInteractions(patientRepository);
     }
 
@@ -269,7 +273,7 @@ class PatientServiceTest {
                 () -> assertEquals("The patient with the provided email address does not exist", notFoundException.getMessage()),
                 () -> assertEquals(HttpStatus.NOT_FOUND, notFoundException.getHttpStatus())
         );
-        verify(patientRepository, never()).deleteByUserEmail(any());
+        verify(patientRepository, never()).deleteByUserEmailIgnoreCase(any());
     }
 
     @Test

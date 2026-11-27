@@ -14,6 +14,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,29 +30,34 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/visits")
 @Tag(name = "Visits")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class VisitController {
 
     private final VisitService visitService;
 
-    @Operation(summary = "Get all visits", description = "Returns all visits, can be filtered")
+    @Operation(
+            summary = "Get paginated list of visits",
+            description = "Retrieves a paginated and sorted list of medical visits, optionally filtered by patient ID or availability"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all visits")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved a page of visits"),
+            @ApiResponse(responseCode = "400", description = "Invalid filter combination or pagination parameters")
     })
     @GetMapping()
-    public List<VisitDto> getVisits(
+    public PagedModel<VisitDto> getVisits(
             @Parameter(description = "Filter by patient's id")
             @RequestParam(name = "patientId", required = false) Long patientId,
             @Parameter(description = "Set to true to get only available visits")
-            @RequestParam(name = "available", required = false, defaultValue = "false") boolean available
+            @RequestParam(name = "onlyAvailable", required = false, defaultValue = "false") boolean onlyAvailable,
+            @ParameterObject @PageableDefault(size = 20, sort = "startTime") Pageable pageable
     ) {
-        return visitService.getVisitsByCriteria(patientId, available);
+        log.info("Received GET /visits request with patientId={}, onlyAvailable={}, pageable={}", patientId, onlyAvailable, pageable);
+        return new PagedModel<>(visitService.getVisitsByCriteria(patientId, onlyAvailable, pageable));
     }
 
     @Operation(summary = "Create a new visit", description = "Creates an available visit slot for a doctor")
@@ -68,6 +78,7 @@ public class VisitController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public VisitDto addVisit(@Valid @RequestBody CreateVisitCommand command) {
+        log.info("Received POST /visits request for command={}", command);
         return visitService.addVisit(command);
     }
 
@@ -94,6 +105,7 @@ public class VisitController {
                                       example = "1")
                               Long id,
                               @Valid @RequestBody BookVisitCommand command) {
+        log.info("Received POST /visits/{}/book request for command={}", id, command);
         return visitService.bookVisit(id, command.patientId());
     }
 }

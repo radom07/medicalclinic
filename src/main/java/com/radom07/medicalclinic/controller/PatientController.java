@@ -16,29 +16,37 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/patients")
 @Tag(name = "Patients")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class PatientController {
 
     private final PatientService patientService;
 
-    @Operation(summary = "Get all patients", description = "Returns all patients in system")
+    @Operation(
+            summary = "Get paginated list of patients",
+            description = "Retrieves a paginated and sorted list of patients registered in the system"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all patients")
-            // content z @ArraySchema czy nie ma potrzeby?
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved a page of patients"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters")
     })
     @GetMapping
-    public List<PatientDto> getPatients() {
-        return patientService.getPatients();
+    public PagedModel<PatientDto> getPatients(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        log.info("Received GET /patients request");
+        return new PagedModel<>(patientService.getPatients(pageable));
     }
 
     @Operation(summary = "Get a patient by email", description = "Returns a patient with provided email")
@@ -60,6 +68,7 @@ public class PatientController {
                                                 description = "Patient's email",
                                                 example = "jan@test.pl")
                                         @Email String email) {
+        log.info("Received GET /patients/{} request", email);
         return patientService.getByEmail(email);
     }
 
@@ -81,6 +90,7 @@ public class PatientController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public PatientDto addPatient(@Valid @RequestBody CreatePatientCommand command) {
+        log.info("Received POST /patients request for command={}", command);
         return patientService.addPatient(command);
     }
 
@@ -102,6 +112,7 @@ public class PatientController {
                                              description = "Patient's email",
                                              example = "jan@test.pl")
                                      @Email String email) {
+        log.info("Received DELETE /patients/{} request", email);
         patientService.deleteByEmail(email);
     }
 
@@ -128,6 +139,7 @@ public class PatientController {
                                             example = "jan@test.pl")
                                     @Email String email,
                                     @Valid @RequestBody UpdatePatientCommand command) {
+        log.info("Received PUT /patients/{} request with command={}", email, command);
         return patientService.updatePatient(email, command);
     }
 
@@ -151,6 +163,7 @@ public class PatientController {
                                              example = "jan@test.pl")
                                      @Email String email,
                                      @Valid @RequestBody ChangePasswordCommand command) {
+        log.info("Received PATCH /patients/{}/password request with command={}", email, command);
         return patientService.updatePassword(email, command.password());
     }
 }

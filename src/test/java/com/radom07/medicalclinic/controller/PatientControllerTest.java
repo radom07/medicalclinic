@@ -11,8 +11,10 @@ import com.radom07.medicalclinic.model.dto.UserDto;
 import com.radom07.medicalclinic.service.PatientService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
@@ -26,7 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@SpringBootTest // zalecany MockMvcWeb
+@WebMvcTest(PatientController.class)
 @AutoConfigureMockMvc
 class PatientControllerTest {
 
@@ -48,22 +50,22 @@ class PatientControllerTest {
                 new PatientDto(3L, new UserDto(3L, "Piotr", "Wiśniewski", "piotr@test.pl", "piotrw"),
                         "555666777", LocalDate.of(2020, 1, 15))
         );
-        when(patientService.getPatients()).thenReturn(patients);
+        when(patientService.getPatients(any(Pageable.class))).thenReturn(new PageImpl<>(patients));
         // when & then
         mockMvc.perform(get("/patients"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(3))
-                .andExpect(jsonPath("$.[0].id").value(1))
-                .andExpect(jsonPath("$.[0].user.id").value(1))
-                .andExpect(jsonPath("$.[0].user.email").value("jan@test.pl"))
-                .andExpect(jsonPath("$.[0].user.firstName").value("Jan"))
-                .andExpect(jsonPath("$.[0].user.lastName").value("Kowalski"))
-                .andExpect(jsonPath("$.[0].user.userName").value("jankowalski"))
-                .andExpect(jsonPath("$.[0].phoneNumber").value("111222333"))
-                .andExpect(jsonPath("$.[0].birthday").value("2015-10-25"))
-                .andExpect(jsonPath("$.[1].user.lastName").value("Nowak"))
-                .andExpect(jsonPath("$.[2].user.email").value("piotr@test.pl"));
-        verify(patientService).getPatients();
+                .andExpect(jsonPath("$.content.length()").value(3))
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].user.id").value(1))
+                .andExpect(jsonPath("$.content[0].user.email").value("jan@test.pl"))
+                .andExpect(jsonPath("$.content[0].user.firstName").value("Jan"))
+                .andExpect(jsonPath("$.content[0].user.lastName").value("Kowalski"))
+                .andExpect(jsonPath("$.content[0].user.userName").value("jankowalski"))
+                .andExpect(jsonPath("$.content[0].phoneNumber").value("111222333"))
+                .andExpect(jsonPath("$.content[0].birthday").value("2015-10-25"))
+                .andExpect(jsonPath("$.content[1].user.lastName").value("Nowak"))
+                .andExpect(jsonPath("$.content[2].user.email").value("piotr@test.pl"));
+        verify(patientService).getPatients(any(Pageable.class));
         verifyNoMoreInteractions(patientService);
     }
 

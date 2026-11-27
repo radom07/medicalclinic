@@ -1,6 +1,5 @@
 package com.radom07.medicalclinic.model.entity;
 
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -39,6 +38,19 @@ public class Facility {
     private String buildingNo;
     @Column(name = "PHONE_NUMBER")
     private String phoneNumber;
-    @ManyToMany(mappedBy = "facilities", cascade = {CascadeType.DETACH, CascadeType.MERGE, CascadeType.PERSIST, CascadeType.REFRESH})
+    @ManyToMany(mappedBy = "facilities")
     private Set<Doctor> doctors;
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Facility)) return false;
+        Facility other = (Facility) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 }

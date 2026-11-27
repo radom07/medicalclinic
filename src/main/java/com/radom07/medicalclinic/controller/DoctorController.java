@@ -15,6 +15,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,24 +31,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/doctors")
 @Tag(name = "Doctors")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class DoctorController {
 
     private final DoctorService doctorService;
 
-    @Operation(summary = "Get all doctors", description = "Returns all doctors in system")
+    @Operation(
+            summary = "Get paginated list of doctors",
+            description = "Retrieves a paginated and sorted list of doctors registered in the system"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all doctors")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved a page of doctors"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters")
     })
     @GetMapping
-    public List<DoctorDto> getDoctors() {
-        return doctorService.getDoctors();
+    public PagedModel<DoctorDto> getDoctors(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        log.info("Received GET /doctors request");
+        return new PagedModel<>(doctorService.getDoctors(pageable));
     }
 
     @Operation(summary = "Get a doctor by email", description = "Returns a doctor with provided email")
@@ -65,6 +74,7 @@ public class DoctorController {
                                               description = "Doctor's email",
                                               example = "jan@test.pl")
                                       @Email String email) {
+        log.info("Received GET /doctors/{} request", email);
         return doctorService.getByEmail(email);
     }
 
@@ -86,6 +96,7 @@ public class DoctorController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public DoctorDto addDoctor(@Valid @RequestBody CreateDoctorCommand command) {
+        log.info("Received POST /doctors request for command={}", command);
         return doctorService.addDoctor(command);
     }
 
@@ -107,6 +118,7 @@ public class DoctorController {
                                             description = "Doctor's email",
                                             example = "jan@test.pl")
                                     @Email String email) {
+        log.info("Received DELETE /doctors/{} request", email);
         doctorService.deleteByEmail(email);
     }
 
@@ -132,6 +144,7 @@ public class DoctorController {
                                                     example = "1")
                                             @PathVariable("id") Long doctorId,
                                             @Valid @RequestBody AssignDoctorToFacilityCommand command) {
+        log.info("Received POST /doctors/{}/facilities/assign request for command={}", doctorId, command);
         return doctorService.assignDoctorToFacility(doctorId, command.facilityId());
     }
 }

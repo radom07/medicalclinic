@@ -12,24 +12,26 @@ import com.radom07.medicalclinic.model.entity.User;
 import com.radom07.medicalclinic.repository.PatientRepository;
 import com.radom07.medicalclinic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PatientService {
 
     private final PatientRepository patientRepository;
     private final UserRepository userRepository;
     private final PatientMapper mapper;
 
-    public List<PatientDto> getPatients() {
-        return patientRepository.findAll().stream()
-                .map(mapper::toDto)
-                .toList();
+    public Page<PatientDto> getPatients(Pageable pageable) {
+        return patientRepository.findAll(pageable)
+                .map(mapper::toDto);
     }
 
     public PatientDto getByEmail(String email) {
@@ -39,6 +41,7 @@ public class PatientService {
     }
 
     public PatientDto addPatient(CreatePatientCommand command) {
+        log.info("Creating patient with command={}", command);
         if (patientRepository.existsByIdCardNo(command.idCardNo())) {
             throw new PatientAlreadyExistsException("The patient with the provided IdCardNo already exists");
         }
@@ -47,18 +50,24 @@ public class PatientService {
         if (user.getPatient() != null) {
             throw new PatientAlreadyExistsException("This user is already a patient");
         }
-        return mapper.toDto(patientRepository.save(mapper.toEntity(command, user)));
+        PatientDto created = mapper.toDto(patientRepository.save(mapper.toEntity(command, user)));
+        log.info("Patient created with id={}", created.id());
+        return created;
     }
 
     @Transactional
     public void deleteByEmail(String email) {
+        log.info("Deleting patient email={}", email);
         if (!patientRepository.existsByUserEmailIgnoreCase(email)) {
             throw new PatientNotFoundException("The patient with the provided email address does not exist");
         }
-        patientRepository.deleteByUserEmail(email);
+        patientRepository.deleteByUserEmailIgnoreCase(email);
+        log.info("Patient id={} deleted", email);
     }
 
+    @Transactional
     public PatientDto updatePatient(String email, UpdatePatientCommand command) {
+        log.info("Updating patient with email={} and command={}", email, command);
         if (!email.equalsIgnoreCase(command.email()) && patientRepository.existsByUserEmailIgnoreCase(command.email())) {
             throw new PatientAlreadyExistsException("You cannot change the email address to one that already exists");
         }
@@ -66,15 +75,19 @@ public class PatientService {
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         existingPatient.update(command);
         patientRepository.save(existingPatient);
+        log.info("Patient updated");
         return mapper.toDto(existingPatient);
     }
 
+    @Transactional
     public PatientDto updatePassword(String email, String password) {
+        log.info("Updating patient's password with email={} and password={}", email, password);
         Objects.requireNonNull(password, "password cannot be null");
         Patient patient = patientRepository.findByUserEmailIgnoreCase(email)
                 .orElseThrow(() -> new PatientNotFoundException("The patient with the provided email address does not exist"));
         patient.getUser().setPassword(password);
         patientRepository.save(patient);
+        log.info("Patient's password updated");
         return mapper.toDto(patient);
     }
 }
