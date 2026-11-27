@@ -38,12 +38,25 @@ public class Doctor {
             inverseJoinColumns = @JoinColumn(name = "MEDICAL_FACILITY_ID"))
     private Set<Facility> facilities = new HashSet<>();
 
-    @OneToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH, CascadeType.DETACH})
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "USER_ID", nullable = false, unique = true)
     private User user;
 
     @OneToMany(mappedBy = "doctor", cascade = CascadeType.REMOVE)
     private List<Visit> visits = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Doctor)) return false;
+        Doctor other = (Doctor) o;
+        return id != null && id.equals(other.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
+    }
 
     public void addFacility(Facility facility) {
         this.facilities.add(facility);

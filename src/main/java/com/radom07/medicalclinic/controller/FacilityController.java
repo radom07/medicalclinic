@@ -13,6 +13,11 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springdoc.core.annotations.ParameterObject;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,24 +29,28 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
 @RestController
 @RequestMapping("/facilities")
 @Tag(name = "Facilities")
 @RequiredArgsConstructor
 @Validated
+@Slf4j
 public class FacilityController {
 
     private final FacilityService facilityService;
 
-    @Operation(summary = "Get all facilities", description = "Returns all facilities in system")
+    @Operation(
+            summary = "Get paginated list of facilities",
+            description = "Retrieves a paginated and sorted list of facilities in the system"
+    )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Found all facilities")
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved a page of facilities"),
+            @ApiResponse(responseCode = "400", description = "Invalid pagination or sorting parameters")
     })
     @GetMapping
-    public List<FacilityDto> getFacilities() {
-        return facilityService.getFacilities();
+    public PagedModel<FacilityDto> getFacilities(@ParameterObject @PageableDefault(size = 20) Pageable pageable) {
+        log.info("Received GET /facilities request");
+        return new PagedModel<>(facilityService.getFacilities(pageable));
     }
 
     @Operation(summary = "Get a facility by id", description = "Returns a facility with provided id")
@@ -60,6 +69,7 @@ public class FacilityController {
                                                description = "Facility's id",
                                                example = "1")
                                        Long id) {
+        log.info("Received GET /facilities/{} request", id);
         return facilityService.getFacilityById(id);
     }
 
@@ -78,6 +88,7 @@ public class FacilityController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public FacilityDto addFacility(@Valid @RequestBody CreateFacilityCommand command) {
+        log.info("Received POST /facilities request for command={}", command);
         return facilityService.addFacility(command);
     }
 
@@ -96,6 +107,7 @@ public class FacilityController {
                                            description = "Facility's id",
                                            example = "1")
                                    Long id) {
+        log.info("Received DELETE /facilities/{} request", id);
         facilityService.deleteFacilityById(id);
     }
 }

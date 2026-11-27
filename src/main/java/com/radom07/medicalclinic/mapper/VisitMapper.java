@@ -4,10 +4,15 @@ import com.radom07.medicalclinic.command.CreateVisitCommand;
 import com.radom07.medicalclinic.model.dto.VisitDto;
 import com.radom07.medicalclinic.model.entity.Doctor;
 import com.radom07.medicalclinic.model.entity.Visit;
+import org.mapstruct.InjectionStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
-@Mapper(componentModel = "spring")
+@Mapper(
+        componentModel = "spring",
+        uses = {DoctorMapper.class, PatientMapper.class},
+        injectionStrategy = InjectionStrategy.CONSTRUCTOR
+)
 public interface VisitMapper {
 
     @Mapping(target = "id", ignore = true)

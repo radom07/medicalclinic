@@ -15,6 +15,9 @@ import com.radom07.medicalclinic.repository.DoctorRepository;
 import com.radom07.medicalclinic.repository.FacilityRepository;
 import com.radom07.medicalclinic.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DoctorService {
 
     private final DoctorRepository doctorRepository;
@@ -31,10 +35,9 @@ public class DoctorService {
     private final FacilityRepository facilityRepository;
     private final DoctorMapper mapper;
 
-    public List<DoctorDto> getDoctors() {
-        return doctorRepository.findAll().stream()
-                .map(mapper::toDto)
-                .toList();
+    public Page<DoctorDto> getDoctors(Pageable pageable) {
+        return doctorRepository.findAll(pageable)
+                .map(mapper::toDto);
     }
 
     public DoctorDto getByEmail(String email) {
@@ -44,6 +47,7 @@ public class DoctorService {
     }
 
     public DoctorDto addDoctor(CreateDoctorCommand command) {
+        log.info("Creating doctor with command={}", command);
         if (doctorRepository.existsByMedicalLicenseNo(command.medicalLicenseNo())) {
             throw new DoctorAlreadyExistsException("The doctor with the provided medicalLicenseNumber already exists");
         }
@@ -53,18 +57,24 @@ public class DoctorService {
             throw new DoctorAlreadyExistsException("This user is already a doctor");
         }
         Set<Facility> commandFacilities = getValidatedFacilities(command.facilityIds());
-        return mapper.toDto(doctorRepository.save(mapper.toEntity(command, user, commandFacilities)));
+        DoctorDto created = mapper.toDto(doctorRepository.save(mapper.toEntity(command, user, commandFacilities)));
+        log.info("Doctor created with id={}", created.id());
+        return created;
     }
 
     @Transactional
     public void deleteByEmail(String email) {
+        log.info("Deleting doctor email={}", email);
         if (!doctorRepository.existsByUserEmailIgnoreCase(email)) {
             throw new DoctorNotFoundException("The doctor with the provided email address does not exist");
         }
-        doctorRepository.deleteByUserEmail(email);
+        doctorRepository.deleteByUserEmailIgnoreCase(email);
+        log.info("Doctor email={} deleted", email);
     }
 
+    @Transactional
     public DoctorDto assignDoctorToFacility(Long doctorId, Long facilityId) {
+        log.info("Assigning doctor with id={} and facilityId={}", doctorId, facilityId);
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new DoctorNotFoundException("The doctor with the provided id does not exist"));
         Facility facility = facilityRepository.findById(facilityId)
@@ -74,6 +84,7 @@ public class DoctorService {
         }
         doctor.addFacility(facility);
         doctorRepository.save(doctor);
+        log.info("Successfully assigned doctor to facility");
         return mapper.toDto(doctor);
     }
 

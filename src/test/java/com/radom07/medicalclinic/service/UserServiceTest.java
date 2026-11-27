@@ -11,6 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
 import org.mockito.Mockito;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 
 import java.util.List;
@@ -52,13 +55,14 @@ public class UserServiceTest {
     @Test
     void getUsers_DataCorrect_ReturnUsersDto() {
         // given
+        Pageable pageable = PageRequest.of(0, 10);
         List<User> users = List.of(
                 buildUser(1L, "Jan", "Kowalski", "jan@test.pl", "jankowalski"),
                 buildUser(2L, "Anna", "Nowak", "anna@test.pl", "annanowak")
         );
-        when(userRepository.findAll()).thenReturn(users);
+        when(userRepository.findAll(pageable)).thenReturn(new PageImpl<>(users));
         // when
-        List<UserDto> userDtos = userService.getUsers();
+        List<UserDto> userDtos = userService.getUsers(pageable).getContent();
         // then
         assertAll(
                 () -> assertEquals(2, userDtos.size()),
@@ -66,7 +70,7 @@ public class UserServiceTest {
                 () -> assertEquals("jan@test.pl", userDtos.get(0).email()),
                 () -> assertEquals("Anna", userDtos.get(1).firstName())
         );
-        verify(userRepository).findAll();
+        verify(userRepository).findAll(pageable);
         verifyNoMoreInteractions(userRepository);
     }
 
